@@ -1,0 +1,12 @@
+---
+name: "Lint"
+on:  # yamllint disable-line rule:truthy
+  - "push"
+  - "pull_request"
+jobs:
+  lint:
+    name: "Lint"
+    runs-on: "ubuntu-latest"
+    steps:
+      - uses: "actions/checkout@v3"
+      - uses: "authzed/actions/yaml-lint@main"
