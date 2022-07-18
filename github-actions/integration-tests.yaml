@@ -1,0 +1,13 @@
+---
+name: "Example Integration Tests"
+on:
+  - "push"
+  - "pull_request"
+jobs:
+  integration:
+    runs-on: "ubuntu-latest"
+    steps:
+      - uses: "actions/checkout@v3"
+      - uses: "authzed/action-spicedb@v1"
+        with:
+          version: "latest"  # Update this to be a stable release version!

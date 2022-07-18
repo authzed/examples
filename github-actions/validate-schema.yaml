@@ -1,0 +1,13 @@
+---
+name: "Example Schema Validate"
+on:
+  - "push"
+  - "pull_request"
+jobs:
+  test:
+    runs-on: "ubuntu-latest"
+    steps:
+      - uses: "actions/checkout@v3"
+      - uses: "authzed/action-spicedb-validate@v1"
+        with:
+          validationfile: "myschema.zed"  # Update this to be your schema file!
