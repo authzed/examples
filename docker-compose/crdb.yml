@@ -1,14 +1,20 @@
 ---
+# Docker: docker compose -f crdb.yml up --scale crdb=3
+# Zed:    zed context set example-crdb localhost:50051 foobar --insecure
+#
 # This runs SpiceDB, using CockroachDB as the storage engine. SpiceDB will not
 # have any schema written to it.
 #
-# Once the database service is running, the init_database service will
-# initialize CockroachDB for SpiceDB by creating the "spicedb" database. Next,
-# the migrate service executes, running "spicedb migrate head" to migrate
-# CockroachDB to the most current revision. After CockroachDB is intialized and
-# migrated, the init_database and migrate services will stop.
+# This compose example is designed to support CRDB clusters. In order
+# to properly form a CRDB cluster, the CLI must be invoked with: --scale=3
+# You can set scale to any number of nodes, or skip to spin up one single node.
 #
-# Note: CockroachDB is run using a single node configuration.
+# - init_cluster runs tells CRDB to form the cluster
+# - init_database creates the logical database used by spicedb
+# - migrate runs "spicedb migrate head", which initializes the SpiceDB schema definition
+#
+# Note: if you specify a project name with the -p flag, the DNS of the CRDB hosts will change
+#       and the cluster won't form
 #
 # SpiceDB settings:
 #   pre-shared key: foobar
@@ -21,6 +27,7 @@
 #   password: secret
 #   port: 26257
 #   dashboard address: http://localhost:8081
+#   sql DSN: postgresql://root:secret@crdb:26257/spicedb?sslmode=disable
 
 version: "3"
 
@@ -36,34 +43,56 @@ services:
     environment:
       - "SPICEDB_GRPC_PRESHARED_KEY=foobar"
       - "SPICEDB_DATASTORE_ENGINE=cockroachdb"
-      - "SPICEDB_DATASTORE_CONN_URI=postgresql://root:secret@database:26257/spicedb?sslmode=disable"
+      - "SPICEDB_DATASTORE_CONN_URI=postgresql://root:secret@crdb:26257/spicedb?sslmode=disable"
+      - "SPICEDB_LOG_LEVEL=info"
+      - "SPICEDB_LOG_FORMAT=console"
     depends_on:
       - "migrate"
 
   migrate:
     image: "authzed/spicedb"
     command: "migrate head"
-    restart: "on-failure"
+    restart: "on-failure:3"
     environment:
       - "SPICEDB_DATASTORE_ENGINE=cockroachdb"
-      - "SPICEDB_DATASTORE_CONN_URI=postgresql://root:secret@database:26257/spicedb?sslmode=disable"
+      - "SPICEDB_DATASTORE_CONN_URI=postgresql://root:secret@crdb:26257/spicedb?sslmode=disable"
+      - "SPICEDB_LOG_LEVEL=info"
+      - "SPICEDB_LOG_FORMAT=console"
     depends_on:
       - "init_database"
 
   init_database:
     image: "cockroachdb/cockroach"
-    restart: "on-failure"
+    restart: "on-failure:3"
     command: "sql --insecure -e 'CREATE DATABASE IF NOT EXISTS spicedb;'"
     environment:
-      - "COCKROACH_HOST=database:26257"
+      - "COCKROACH_HOST=crdb:26257"
     depends_on:
-      - "database"
+      - "init_cluster"
 
-  database:
+  init_cluster:
     image: "cockroachdb/cockroach"
-    command: "start-single-node --insecure"
+    restart: "on-failure:3"
+    command: "init --insecure"
+    environment:
+      # initialize cluster through node 1
+      - "COCKROACH_HOST=docker-compose-crdb-1:26257"
+    depends_on:
+      - "crdb"
+
+  crdb:
+    image: "cockroachdb/cockroach"
+    # in order to make the cluster form, the host name is <project>-<service>-<number>
+    # The setup will support --scale arg with any value
+    command: "start --join=docker-compose-crdb-1,docker-compose-crdb-2,docker-compose-crdb-3 --insecure"
     ports:
-      - "26257:26257"
-      - "8081:8080" # Using 8081 because 8080 is used by SpiceDB
+      - "8080"
+      - "26257"
     environment:
       - "POSTGRES_PASSWORD=secret"
+    healthcheck:
+      test: "curl --fail http://localhost:8080/health?ready=1 || exit 1"
+      interval: "2s"
+      retries: 3
+      start_period: "15s"
+      timeout: "5s"
