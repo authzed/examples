@@ -192,12 +192,10 @@ Resources:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
       HealthCheckIntervalSeconds: 300
-      # will look for a 200 status code by default unless specified otherwise
       HealthCheckPath: !Ref HealthCheckPath
       HealthCheckTimeoutSeconds: 5
       UnhealthyThresholdCount: 2
       HealthyThresholdCount: 2
-      # gRPC -specific configuration not tested
       HealthCheckEnabled: true
       HealthCheckPort: 'traffic-port'
       HealthCheckProtocol: HTTP
@@ -205,11 +203,9 @@ Resources:
       Name: !Join ['', [!Ref ServiceName, TargetGroup]]
       Port: !Ref ContainerPort
       Protocol: HTTP
-      # gRPC -specific configuration not tested
       ProtocolVersion: GRPC
       Matcher:
         GrpcCode: 0
-      # end of gRPC -specific configuration
       TargetGroupAttributes:
         - Key: deregistration_delay.timeout_seconds
           Value: 300 # default is 300
