@@ -76,7 +76,7 @@ services:
     command: "init --insecure"
     environment:
       # initialize cluster through node 1
-      - "COCKROACH_HOST=docker-compose-crdb-1:26257"
+      - "COCKROACH_HOST=datastores-crdb-1:26257"
     depends_on:
       - "crdb"
 
@@ -84,7 +84,7 @@ services:
     image: "cockroachdb/cockroach"
     # in order to make the cluster form, the host name is <project>-<service>-<number>
     # The setup will support --scale arg with any value
-    command: "start --join=docker-compose-crdb-1,docker-compose-crdb-2,docker-compose-crdb-3 --insecure"
+    command: "start --join=datastores-crdb-1,datastores-crdb-2,datastores-crdb-3 --insecure"
     ports:
       - "8080"
       - "26257"
