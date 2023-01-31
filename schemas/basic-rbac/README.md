@@ -1,10 +1,43 @@
-# Basic RBAC Example
+# Simple Role Based Access Control
 
-This is an example of a super basic Role Based Access Control
+Models Role Based Access Control (RBAC), where access is granted to users based on the role(s) in which they are a member.
 
--------
+---
 
 ## Schema
+
+```
+/**
+ * user represents a user that can be granted role(s)
+ */
+definition user {}
+
+/**
+ * document represents a document protected by Authzed.
+ */
+definition document {
+    /**
+     * writer indicates that the user is a writer on the document.
+     */
+    relation writer: user
+
+    /**
+     * reader indicates that the user is a reader on the document.
+     */
+    relation reader: user
+
+    /**
+     * edit indicates that the user has permission to edit the document.
+     */
+    permission edit = writer
+
+    /**
+     * view indicates that the user has permission to view the document, if they
+     * are a `reader` *or* have `edit` permission.
+     */
+    permission view = reader + edit
+}
+```
 
 The RBAC example defines two kinds of objects: `user` to be used as references to users and `document`, representing a resource being protected (in this case, a document).
 
@@ -63,4 +96,4 @@ The `edit` permission defines an edit permission on the document.
 
 The `view` permission defines a view permission on the document.
 
-Note that `view` includes the `edit` permission. This means that if a user is granted the role of `writer` and thus, has `edit` permission, they will *also* be implicitly granted the permission of `view`.
+Note that `view` includes the `edit` permission. This means that if a user is granted the role of `writer` and thus, has `edit` permission, they will _also_ be implicitly granted the permission of `view`.
