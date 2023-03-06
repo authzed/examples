@@ -98,11 +98,11 @@ spec:
             #     secretKeyRef:
             #       name: "spicedb"
             #       key: "SPICEDB_HTTP_KEY_PATH"
-            # - name: "SPICEDB_GRPC_HTTP_CERT_PATH"
+            # - name: "SPICEDB_HTTP_TLS_CERT_PATH"
             #   valueFrom:
             #     secretKeyRef:
             #       name: "spicedb"
-            #       key: "SPICEDB_HTTP_CERT_PATH"
+            #       key: "SPICEDB_HTTP_TLS_CERT_PATH"
             #
             # These flags are used to enable a persistent datastore along
             # with cluster dispatching. For more info see:
