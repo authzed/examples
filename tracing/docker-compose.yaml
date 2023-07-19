@@ -18,6 +18,7 @@ services:
       - "SPICEDB_NS_CACHE_METRICS=true"
       - "SPICEDB_METRICS_ENABLED=true"
       - "SPICEDB_OTEL_PROVIDER=otlpgrpc"
+      - "SPICEDB_OTEL_SAMPLE_RATIO=1"
       - "OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317"
     depends_on:
       - "otel-collector"
