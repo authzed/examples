@@ -106,7 +106,6 @@ func newServer(ctx context.Context) (server.RunnableServer, error) {
 			return ctx, nil
 		}),
 		server.WithHTTPGateway(util.HTTPServerConfig{HTTPEnabled: false}),
-		server.WithDashboardAPI(util.HTTPServerConfig{HTTPEnabled: false}),
 		server.WithMetricsAPI(util.HTTPServerConfig{HTTPEnabled: true}),
 		// disable caching since it's all in memory
 		server.WithDispatchCacheConfig(server.CacheConfig{Enabled: false, Metrics: false}),
