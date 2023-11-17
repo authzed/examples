@@ -70,6 +70,15 @@ services:
     depends_on:
       - "init_cluster"
 
+  enable_changefeeds:
+    image: "cockroachdb/cockroach"
+    restart: "on-failure:3"
+    command: "sql --insecure -e 'SET CLUSTER SETTING kv.rangefeed.enabled = true;'"
+    environment:
+      - "COCKROACH_HOST=crdb:26257"
+    depends_on:
+      - "init_database"
+
   init_cluster:
     image: "cockroachdb/cockroach"
     restart: "on-failure:3"
