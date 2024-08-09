@@ -1,0 +1,25 @@
+receivers:
+  prometheus:
+    config:
+      scrape_configs:
+        - job_name: 'prometheus'
+          metrics_path: /api/v1alpha/metrics
+          scrape_interval: 15s
+          static_configs:
+            - targets: ['<YOUR_AUTHZED_DEDICATED_INSTANCE>']
+          basic_auth:
+            username: '<PS_NAME>'
+            password: '<METRICS_TOKEN>'
+
+exporters:
+  datadog:
+    api:
+      site: "<YOUR_DATADOG_SITE>"
+      key: "<YOUR_DATADOG_API_KEY>"
+
+service:
+  pipelines:
+    metrics:
+      receivers: [prometheus]
+      processors: []
+      exporters: [datadog]
