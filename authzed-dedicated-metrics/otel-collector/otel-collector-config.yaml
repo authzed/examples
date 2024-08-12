@@ -1,24 +1,23 @@
+---
 receivers:
   prometheus:
     config:
       scrape_configs:
-        - job_name: 'prometheus'
-          metrics_path: /api/v1alpha/metrics
-          scrape_interval: 15s
+        - job_name: "prometheus"
+          metrics_path: "/api/v1alpha/metrics"
+          scrape_interval: "15s"
           static_configs:
-            - targets: ['app.admin.demo.aws.authzed.net']
+            - targets: ["app.admin.demo.aws.authzed.net"]
           basic_auth:
-            username: ${PROMETHEUS_USERNAME}
-            password: ${PROMETHEUS_PASSWORD}
-
+            username: ${PROMETHEUS_USERNAME}  # yamllint disable-line rule:quoted-strings
+            password: ${PROMETHEUS_PASSWORD}  # yamllint disable-line rule:quoted-strings
 exporters:
   otlp:
-    endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT}
+    endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT}  # yamllint disable-line rule:quoted-strings
     headers:
-      x-honeycomb-team: ${OTEL_EXPORTER_OTLP_HEADERS}
-
+      x-honeycomb-team: ${OTEL_EXPORTER_OTLP_HEADERS}  # yamllint disable-line rule:quoted-strings
 service:
   pipelines:
     metrics:
-      receivers: [prometheus]
-      exporters: [otlp]
+      receivers: ["prometheus"]
+      exporters: ["otlp"]

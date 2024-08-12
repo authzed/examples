@@ -54,20 +54,11 @@ Here's an example of a filled-out configuration:
               - "https://app.demo.aws.authzed.net"
     ```
 
-
 3. Save prometheus.yml 
 
 4. Run `docker compose up`
-
 
 ### Ports:
 
 Prometheus: 9090
 Grafana: 3000
-
-
-
-
-
-
-
