@@ -7,7 +7,7 @@ receivers:
           metrics_path: "/api/v1alpha/metrics"
           scrape_interval: "15s"
           static_configs:
-            - targets: ["app.admin.demo.aws.authzed.net"]
+            - targets: ["${AUTHZED_DEDICATED_HOST}"]
           basic_auth:
             username: ${PROMETHEUS_USERNAME}  # yamllint disable-line rule:quoted-strings
             password: ${PROMETHEUS_PASSWORD}  # yamllint disable-line rule:quoted-strings
