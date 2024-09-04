@@ -8,14 +8,16 @@
 #
 # SpiceDB settings:
 #   pre-shared key: foobar
-#   dashboard address: http://localhost:8080
 #   metrics address: http://localhost:9090
-#   grpc address: http://localhost:50051
+#   grpc address: localhost:50051
 #
 # Postgres settings:
 #   user: postgres
 #   password: secret
 #   port: 5432
+#
+# example call with zed:
+#   zed schema read --endpoint=localhost:50051 --insecure=true
 
 version: "3"
 
@@ -46,9 +48,20 @@ services:
       - "database"
 
   database:
-    image: "postgres"
+    image: "postgres:15"
     ports:
       - "5432:5432"
     environment:
       - "POSTGRES_PASSWORD=secret"
       - "POSTGRES_DB=spicedb"
+
+  # track_commit_timestamp is required to support SpiceDB's Watch API
+  # see https://authzed.com/docs/spicedb/concepts/datastores#usage-notes-2
+  init_database:
+    image: "postgres:15"
+    restart: "on-failure:3"
+    command: "psql -h database -U postgres -c \"ALTER SYSTEM SET track_commit_timestamp = on;\""
+    environment:
+      - "PGPASSWORD=secret"
+    depends_on:
+      - "database"
