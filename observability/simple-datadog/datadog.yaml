@@ -1,0 +1,5 @@
+---
+# We also don't care about logs
+process_config:
+  container_collection:
+    enabled: false

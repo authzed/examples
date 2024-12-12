@@ -1,0 +1,90 @@
+---
+name: "metrics-adventure"
+
+services:
+  datadog:
+    image: "datadog/agent"
+    environment:
+      DD_API_KEY: "${DD_API_KEY}"
+      DD_HOSTNAME: "yetibox"
+
+      # NOTE: you can't set this via the config; it needs to come from environment variables.
+      # These are the environment variables that enable collection via OTLP.
+      DD_OTLP_CONFIG_RECEIVER_PROTOCOLS_GRPC_ENDPOINT: "0.0.0.0:4317"
+      # Tells Datadog that we want to send along traces.
+      # Additional variables would be needed for OTLP logging and metrics
+      # if desired.
+      DD_OTLP_CONFIG_TRACES_ENABLED: true
+    volumes:
+      - "./conf.d:/conf.d"
+      - "./datadog.yaml:/datadog.yaml"
+
+  spicedb:
+    image: "authzed/spicedb:v1.38.1"
+    command: "serve"
+    restart: "on-failure"
+    environment:
+      SPICEDB_GRPC_PRESHARED_KEY: "thisisnotasecret"
+      SPICEDB_DATASTORE_ENGINE: &datastore_engine "postgres"
+      SPICEDB_DATASTORE_CONN_URI: &datastore_conn_uri "postgres://postgres:secret@database:5432/spicedb?sslmode=disable"
+
+      # OTLP flags; this is how traces are sent to the Datadog agent.
+      # This matches the receiver endpoint configured on the agent.
+      SPICEDB_OTEL_ENDPOINT: "datadog:4317"
+      # Whether to use HTTP or HTTPS
+      SPICEDB_OTEL_INSECURE: true
+      # Use gRPC for submission, since the DD agent supports it. `otlphttp`
+      # is a valid option as well.
+      SPICEDB_OTEL_PROVIDER: "otlpgrpc"
+      # Send all traces. This defaults to 0.01 and should be tuned for your system.
+      SPICEDB_OTEL_SAMPLE_RATIO: 1.0
+      # The default is w3c, which datadog doesn't support. In order to get trace
+      # propagation from a datadog-instrumented application, you'll need to
+      # ensure that the APM is configured to attach b3 trace propagation header.
+      SPICEDB_OTEL_TRACE_PROPAGATOR: "b3"
+    ports:
+      - "9090:9090"
+    depends_on:
+      - "spicedb-migrate"
+
+  spicedb-migrate:
+    image: "authzed/spicedb:v1.38.1"
+    command: "migrate head"
+    restart: "on-failure"
+    environment:
+      SPICEDB_DATASTORE_ENGINE: *datastore_engine
+      SPICEDB_DATASTORE_CONN_URI: *datastore_conn_uri
+    depends_on:
+      - "database"
+
+  # Load generation tooling. This is to ensure that there are metrics
+  # and traces to look at.
+  thumper:
+    image: "authzed/thumper"
+    command: "run --endpoint spicedb:50051 --token thisisnotasecret /scripts/example.yaml"
+    depends_on:
+      - "spicedb"
+      - "thumper-init"
+  # This runs the schema write for the subsequent load generation.
+  thumper-init:
+    image: "authzed/thumper"
+    command: "migrate --endpoint spicedb:50051 --token thisisnotasecret /scripts/schema.yaml"
+    # Restarting on failure should mean that the init reattempts until it succeeds
+    restart: "on-failure"
+    depends_on:
+      spicedb:
+        condition: "service_started"
+
+  database:
+    image: "postgres:16"
+    ports:
+      - "5432:5432"
+    environment:
+      - "POSTGRES_PASSWORD=secret"
+      - "POSTGRES_DB=spicedb"
+    # This keeps postgres's data around when you bring the system down and back up
+    volumes:
+      - "pgdata:/var/lib/postgresql/data"
+
+volumes:
+  pgdata:
