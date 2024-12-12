@@ -1,6 +1,6 @@
 ---
 init_config:
-  service: spicedb
+  service: "spicedb"
 
 instances:
   - openmetrics_endpoint: "http://spicedb:9090/metrics"

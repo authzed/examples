@@ -1,11 +1,11 @@
 ---
-name: metrics-adventure
+name: "metrics-adventure"
 
 services:
   datadog:
-    image: datadog/agent
+    image: "datadog/agent"
     environment:
-      DD_API_KEY: ${DD_API_KEY}
+      DD_API_KEY: "${DD_API_KEY}"
       DD_HOSTNAME: "yetibox"
 
       # NOTE: you can't set this via the config; it needs to come from environment variables.
