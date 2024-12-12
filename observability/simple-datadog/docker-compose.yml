@@ -38,10 +38,6 @@ services:
       SPICEDB_OTEL_PROVIDER: "otlpgrpc"
       # Send all traces. This defaults to 0.01 and should be tuned for your system.
       SPICEDB_OTEL_SAMPLE_RATIO: 1.0
-      # The default is w3c, which datadog doesn't support. In order to get trace
-      # propagation from a datadog-instrumented application, you'll need to
-      # ensure that the APM is configured to attach b3 trace propagation header.
-      SPICEDB_OTEL_TRACE_PROPAGATOR: "b3"
     ports:
       - "9090:9090"
     depends_on:
