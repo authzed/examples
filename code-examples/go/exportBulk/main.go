@@ -29,7 +29,7 @@ func main() {
 	defer cancel()
 
 	var cursor *v1.Cursor
-	exportResults := make([]*v1.Relationship, 0)
+	var exportResults []*v1.Relationship
 
 	totalProcessed := 0
 
