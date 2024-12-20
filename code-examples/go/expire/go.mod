@@ -1,4 +1,4 @@
-module github.com/examples/code-examples/go/expire
+module github.com/authzed/examples/code-examples/go/expire
 
 go 1.23.4
 

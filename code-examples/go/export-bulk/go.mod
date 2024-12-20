@@ -1,4 +1,4 @@
-module github.com/examples/code-examples/go/export-bulk
+module github.com/authzed/examples/code-examples/go/export-bulk
 
 go 1.23.4
 
