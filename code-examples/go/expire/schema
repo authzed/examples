@@ -1,0 +1,9 @@
+use expiration
+
+definition user {}
+
+definition document {
+    relation viewer: user with expiration
+
+    permission view = viewer
+}
