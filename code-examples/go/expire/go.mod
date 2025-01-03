@@ -1,11 +1,12 @@
-module github.com/authzed/examples/code-examples/go/export-bulk
+module github.com/authzed/examples/code-examples/go/expire
 
 go 1.23.4
 
 require (
 	github.com/authzed/authzed-go v1.2.0
 	github.com/authzed/grpcutil v0.0.0-20240123194739-2ea1e3d2d98b
-	google.golang.org/grpc v1.69.0
+	google.golang.org/grpc v1.69.2
+	google.golang.org/protobuf v1.36.0
 )
 
 require (
@@ -26,6 +27,5 @@ require (
 	golang.org/x/text v0.20.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20241118233622-e639e219e697 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20241118233622-e639e219e697 // indirect
-	google.golang.org/protobuf v1.35.2 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
