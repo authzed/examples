@@ -205,7 +205,6 @@ relationships: |-
   spanner_instance:instance1#project@project:proj1
 
   // Add permissions to "admin" role
-  role:spanner_database_admin#spanner_databases_drop@role:spanner_database_admin
   role:spanner_database_admin#spanner_databaseoperations_cancel@role:spanner_database_admin
   role:spanner_database_admin#spanner_databaseoperations_delete@role:spanner_database_admin
   role:spanner_database_admin#spanner_databaseoperations_get@role:spanner_database_admin
