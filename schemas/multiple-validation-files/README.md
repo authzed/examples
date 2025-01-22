@@ -11,3 +11,6 @@ zed validate validations/*
 ```
 
 in this folder will validate the schema and run all validations in all schema files.
+
+Note the use of `schemaFile: ` in the validation files - this allows the validation file to
+reference the schema without the schema needing to be inline.
