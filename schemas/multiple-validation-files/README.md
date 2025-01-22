@@ -1,5 +1,7 @@
 ## Multiple Validation Files with a Single Schema
 
+This requires zed version v0.25.0.
+
 This folder demonstrates a structure for a schema and validation files that
 can be run in a single `zed validate` command and used as a template
 for writing multiple independent tests of a single schema.
