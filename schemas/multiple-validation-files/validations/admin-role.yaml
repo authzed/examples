@@ -1,0 +1,54 @@
+---
+schemaFile: "../schema.zed"
+relationships: |-
+  spanner_database:db1#instance@spanner_instance:instance1
+  spanner_instance:instance1#project@project:proj1
+
+  // Add permissions to "admin" role
+  role:spanner_database_admin#spanner_databaseoperations_cancel@role:spanner_database_admin
+  role:spanner_database_admin#spanner_databaseoperations_delete@role:spanner_database_admin
+  role:spanner_database_admin#spanner_databaseoperations_get@role:spanner_database_admin
+  role:spanner_database_admin#spanner_databaseoperations_list@role:spanner_database_admin
+  role:spanner_database_admin#spanner_databaseroles_list@role:spanner_database_admin
+  role:spanner_database_admin#spanner_databaseroles_use@role:spanner_database_admin
+  role:spanner_database_admin#spanner_databases_beginorrollbackreadwritetransaction@role:spanner_database_admin
+  role:spanner_database_admin#spanner_databases_beginpartitioneddmltransaction@role:spanner_database_admin
+  role:spanner_database_admin#spanner_databases_beginreadonlytransaction@role:spanner_database_admin
+  role:spanner_database_admin#spanner_databases_create@role:spanner_database_admin
+  role:spanner_database_admin#spanner_databases_drop@role:spanner_database_admin
+  role:spanner_database_admin#spanner_databases_get@role:spanner_database_admin
+  role:spanner_database_admin#spanner_databases_getddl@role:spanner_database_admin
+  role:spanner_database_admin#spanner_databases_getiampolicy@role:spanner_database_admin
+  role:spanner_database_admin#spanner_databases_list@role:spanner_database_admin
+  role:spanner_database_admin#spanner_databases_partitionquery@role:spanner_database_admin
+  role:spanner_database_admin#spanner_databases_partitionread@role:spanner_database_admin
+  role:spanner_database_admin#spanner_databases_read@role:spanner_database_admin
+  role:spanner_database_admin#spanner_databases_select@role:spanner_database_admin
+  role:spanner_database_admin#spanner_databases_setiampolicy@role:spanner_database_admin
+  role:spanner_database_admin#spanner_databases_update@role:spanner_database_admin
+  role:spanner_database_admin#spanner_databases_updateddl@role:spanner_database_admin
+  role:spanner_database_admin#spanner_databases_userolebasedaccess@role:spanner_database_admin
+  role:spanner_database_admin#spanner_databases_write@role:spanner_database_admin
+  role:spanner_database_admin#spanner_instances_get@role:spanner_database_admin
+  role:spanner_database_admin#spanner_instances_getiampolicy@role:spanner_database_admin
+  role:spanner_database_admin#spanner_instances_list@role:spanner_database_admin
+  role:spanner_database_admin#spanner_sessions_create@role:spanner_database_admin
+  role:spanner_database_admin#spanner_sessions_delete@role:spanner_database_admin
+  role:spanner_database_admin#spanner_sessions_get@role:spanner_database_admin
+  role:spanner_database_admin#spanner_sessions_list@role:spanner_database_admin
+
+  // Grant admin role to a specific user on a resource
+  role:spanner_database_admin#bound_user@user:specific_db_admin
+  spanner_database:db1#granted@role:spanner_database_admin
+assertions:
+  assertTrue:
+    - "spanner_database:db1#drop@user:specific_db_admin"
+    - "spanner_database:db1#delete_session@user:specific_db_admin"
+  assertFalse:
+    # Can't drop a database you don't have access to
+    - "spanner_database:db2#drop@user:specific_db_admin"
+validation:
+  spanner_database:db1#drop:
+    - "[user:specific_db_admin] is <role:spanner_database_admin#bound_user>"
+  spanner_database:db1#read:
+    - "[user:specific_db_admin] is <role:spanner_database_admin#bound_user>"

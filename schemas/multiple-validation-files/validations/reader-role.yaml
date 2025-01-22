@@ -1,0 +1,32 @@
+---
+schemaFile: "../schema.zed"
+relationships: |-
+  spanner_database:db1#instance@spanner_instance:instance1
+  spanner_instance:instance1#project@project:proj1
+
+  // Add permissions to "reader" role
+  role:spanner_database_reader#spanner_databases_beginreadonlytransaction@role:spanner_database_reader
+  role:spanner_database_reader#spanner_databases_getddl@role:spanner_database_reader
+  role:spanner_database_reader#spanner_databases_partitionquery@role:spanner_database_reader
+  role:spanner_database_reader#spanner_databases_partitionread@role:spanner_database_reader
+  role:spanner_database_reader#spanner_databases_read@role:spanner_database_reader
+  role:spanner_database_reader#spanner_databases_select@role:spanner_database_reader
+  role:spanner_database_reader#spanner_instances_get@role:spanner_database_reader
+  role:spanner_database_reader#spanner_sessions_create@role:spanner_database_reader
+  role:spanner_database_reader#spanner_sessions_delete@role:spanner_database_reader
+  role:spanner_database_reader#spanner_sessions_get@role:spanner_database_reader
+  role:spanner_database_reader#spanner_sessions_list@role:spanner_database_reader
+
+  // Grant reader role to a specific user on a resource
+  role:spanner_database_reader#bound_user@user:project_db_reader
+  project:proj1#granted@role:spanner_database_reader
+assertions:
+  assertTrue:
+    - "spanner_database:db1#read@user:project_db_reader"
+    - "spanner_database:db1#list_sessions@user:project_db_reader"
+  assertFalse:
+    # Can't drop a database you don't have access to
+    - "spanner_database:db2#drop@user:project_db_reader"
+validation:
+  spanner_database:db1#read:
+    - "[user:project_db_reader] is <role:spanner_database_reader#bound_user>"
