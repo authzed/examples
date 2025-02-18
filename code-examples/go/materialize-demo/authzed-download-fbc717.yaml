@@ -1,0 +1,29 @@
+schema: |-
+  
+  definition user {}
+
+  definition organization {
+  	relation member: user
+  }
+
+  definition folder {
+  	relation viewer: user
+  	relation organization: organization
+
+  	permission view_doc = viewer & organization->member
+  }
+
+  definition document {
+  	relation folder: folder
+  	permission view = folder->view_doc
+  }
+relationships: |-
+  document:123#folder@folder:abc
+  folder:abc#organization@organization:acme
+  organization:acme#member@user:tim
+  folder:abc#viewer@user:tim
+  document:456#folder@folder:abc
+assertions:
+  assertTrue: []
+  assertFalse: []
+validation: {}
