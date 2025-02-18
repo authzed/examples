@@ -4,6 +4,8 @@
 
 This is the code used for the Authzed Materialize demo. This code provides some examples of how to integrate with Materialize using the Authzed Go client. It's not intended for you to run this code.
 
+Please be aware that this program is for demonstration and educational purposes. You might take different approaches when integrating with Materialize in a prod env.
+
 Materialize is only available on Authzed Dedicated. Reach out to support@authzed.com if you's like to try it out.
 
 ## Internal Authzed Notes
