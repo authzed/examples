@@ -20,7 +20,8 @@ func clientInit() *authzed.Client {
 
 	spiceClient, err := authzed.NewClient(
 		"materialize-demo-epic-herring-5707.us-east-1.demo.aws.authzed.net:443",
-		grpcutil.WithBearerToken("sdbst_h256_e4b91fcb2d3eb39d75c507b5fc4595494aa36f70db44f39a8a0ab5c3ba6eb836be7d8b225a0cd1bd8a036aed5e461dd0ab044dca0dbc525a2026638e2aa8dd3521bbeb74fdfc752f440e56010c48a42208fbd2b198f59e46030ef7e33db40c4e"),
+		//insert token here
+		grpcutil.WithBearerToken(""),
 		systemCerts,
 	)
 	if err != nil {
