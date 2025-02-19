@@ -24,7 +24,7 @@ func clientInit() *grpc.ClientConn {
 	tigerConn, err := grpc.NewClient(
 		"localhost:50054",
 		systemCerts,
-		grpcutil.WithBearerToken("sdbpk_8466b13439e4db1f8cabaf377ce8db8cc8643ae4ddd20cec990340170dfdc714d5461e51723766851aba0e845ce815ca104d9ff04384c96195ae156d2952e49a579d8caf2b06e71918926df4cbe09c2cc1b279cdc734ca31573dbca542a3ce7c"),
+		grpcutil.WithBearerToken(""),
 	)
 	if err != nil {
 		log.Fatalf("failed to connect to gRPC server: %v", err)
