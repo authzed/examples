@@ -10,28 +10,37 @@ schema: |-
     day_of_week == 'tuesday'
   }
 
+  caveat ip_allowlist(user_ip ipaddress, cidr string) {
+    user_ip.in_cidr(cidr)
+  }
+
   definition document {
       /**
-       * reader indicates that the user is a reader on the document, either directly
-       * or only on tuesday.
+       * reader indicates that the user is a reader on the document, either directly,
+       * only on tuesday, or from allowed IPs.
        */
-      relation reader: user | user with only_on_tuesday
+      relation reader: user | user with only_on_tuesday | user with ip_allowlist
 
       permission view = reader
   }
 relationships: |-
   document:firstdoc#reader@user:fred
   document:firstdoc#reader@user:tom[only_on_tuesday]
+  document:firstdoc#reader@user:alice[ip_allowlist:{"cidr":"1.2.3.0/24"}]
 assertions:
   assertTrue:
     - 'document:firstdoc#view@user:tom with {"day_of_week": "tuesday"}'
     - "document:firstdoc#view@user:fred"
+    - 'document:firstdoc#view@user:alice with {"user_ip": "1.2.3.4"}'
   assertCaveated:
     - "document:firstdoc#view@user:tom"
+    - "document:firstdoc#view@user:alice"
   assertFalse:
     - 'document:firstdoc#view@user:tom with {"day_of_week": "wednesday"}'
+    - 'document:firstdoc#view@user:alice with {"user_ip": "8.8.8.8"}'
 validation:
   document:firstdoc#view:
     - "[user:fred] is <document:firstdoc#reader>"
     - "[user:tom[...]] is <document:firstdoc#reader>"
+    - "[user:alice[...]] is <document:firstdoc#reader>"
   document:seconddoc#view: []
