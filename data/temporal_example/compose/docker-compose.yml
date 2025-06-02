@@ -1,19 +1,20 @@
+---
 version: "3.8"
 
 services:
   postgres:
-    image: postgres:15
-    container_name: dev-postgres
+    image: "postgres:15"
+    container_name: "dev-postgres"
     environment:
-      POSTGRES_USER: dev
-      POSTGRES_PASSWORD: abc123
-      POSTGRES_DB: blog_authors
+      POSTGRES_USER: "dev"
+      POSTGRES_PASSWORD: "abc123"
+      POSTGRES_DB: "blog_authors"
     ports:
       - "5432:5432"
 
   spicedb:
-    image: authzed/spicedb:v1.34.0
-    container_name: dev-spicedb
+    image: "authzed/spicedb:v1.34.0"
+    container_name: "dev-spicedb"
     command: [
       "serve",
       "--grpc-preshared-key", "localkey",
@@ -21,7 +22,4 @@ services:
     ports:
       - "50051:50051"   # gRPC
     depends_on:
-      - postgres
-
-
-
+      - "postgres"
