@@ -24,7 +24,7 @@ Follow these steps to run this example:
 8. Setup the Postgres DB and SpiceDB: `python run_migrations.py`
 9. Start the Temporal Worker: `python run_worker.py`
 
-### Experiencing temporal
+### Experiencing Temporal
 10. Run the Temporal workflow (worker should still be running while you are doing this): `python run_workflow.py --author bob --post some_post`
 11. Simulate a Postgres failure by stopping the Docker container running Postgres: `docker stop dev-postgres`
 12. Run the Temporal workflow (worker should still be running while you are doing this): `python run_workflow.py --author bob --post another_post`
