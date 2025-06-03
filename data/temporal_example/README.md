@@ -36,7 +36,7 @@ Follow these steps to run this example:
 
 - This example uses Temporal's default [retry policy](https://docs.temporal.io/encyclopedia/retry-policies) for Activities and Workflows. This means that an Activity will indefinitely try to complete a successful execution.
 
-- Both Postgres and SpiceDB writes in this example are idempotent. In the case of the record already existing, there will be no errors and the workflow will complete successfully. [Temporal reccomends that all activities are idempotent.](https://docs.temporal.io/activity-definition#idempotency)
+- Both Postgres and SpiceDB writes in this example are idempotent. In the case of the record already existing, there will be no errors and the workflow will complete successfully. [Temporal recommends that all activities be idempotent.](https://docs.temporal.io/activity-definition#idempotency)
 
 - This example uses a single Temporal Task Queue partition. [Task Queues with a single partition](https://docs.temporal.io/task-queue#task-ordering) are almost always first-in, first-out, with rare edge case exceptions.
 
