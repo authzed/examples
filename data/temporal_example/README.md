@@ -41,6 +41,3 @@ Follow these steps to run this example:
 - This example uses a single Temporal Task Queue partition. [Task Queues with a single partition](https://docs.temporal.io/task-queue#task-ordering) are almost always first-in, first-out, with rare edge case exceptions.
 
 - This example writes directly to SpiceDB and Postgres. For many use cases, Temporal will make API requests to distributed microservices that in turn make requests to SpiceDB and an app DB.
-
-
-
