@@ -22,7 +22,7 @@ Follow these steps to run this example:
 6. Setup a virtual env: `python3 -m venv env`, then `source env/bin/activate`.
 7. Install dependencies: `pip install authzed temporalio psycopg`
 8. Setup the Postgres DB and SpiceDB: `python run_migrations.py`
-9. Start the temporal Worker: `python run_worker.py`
+9. Start the Temporal Worker: `python run_worker.py`
 
 ### Experiencing temporal
 10. Run the Temporal workflow (worker should still be running while you are doing this): `python run_workflow.py --author bob --post some_post`
