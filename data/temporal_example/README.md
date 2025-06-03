@@ -8,6 +8,7 @@ Before beginning this example walkthrough, it is recommended to have basic knowl
 - [Docker Compose](https://docs.docker.com/compose/install/)
 - [Temporal CLI](https://docs.temporal.io/cli#install)
 - [Python 3](https://www.python.org/downloads/)
+- [pip](https://packaging.python.org/en/latest/tutorials/installing-packages/) (included with Python if you installed via Homebrew or python.org) 
 
 ## Running this Example
 
@@ -20,14 +21,14 @@ Follow these steps to run this example:
 4. Change to the parent directory: `cd ..`
 5. Start a development Temporal Server: `temporal server start-dev`
 6. Setup a virtual env: `python3 -m venv env`, then `source env/bin/activate`.
-7. Install dependencies: `pip install authzed temporalio psycopg`
-8. Setup the Postgres DB and SpiceDB: `python run_migrations.py`
-9. Start the Temporal Worker: `python run_worker.py`
+7. Install dependencies: `python3 -m pip install authzed temporalio psycopg`
+8. Setup the Postgres DB and SpiceDB: `python3 run_migrations.py`
+9. Start the Temporal Worker: `python3 run_worker.py`
 
 ### Experiencing Temporal
-10. Run the Temporal workflow (worker should still be running while you are doing this): `python run_workflow.py --author bob --post some_post`
+10. Run the Temporal workflow (worker should still be running while you are doing this): `python3 run_workflow.py --author bob --post some_post`
 11. Simulate a Postgres failure by stopping the Docker container running Postgres: `docker stop dev-postgres`
-12. Run the Temporal workflow (worker should still be running while you are doing this): `python run_workflow.py --author bob --post another_post`
+12. Run the Temporal workflow (worker should still be running while you are doing this): `python3 run_workflow.py --author bob --post another_post`
 13. Notice that the initial attempt failed.
 14. Restart Postgres: `docker start dev-postgres`
 15. Wait a few seconds and notice that the Postgres write activity succeeds and that the workflow succeeds. 😎
