@@ -42,10 +42,8 @@ public class LookupPermissionSetsStreamObserver implements StreamObserver<Lookup
             if (permissionSetChange.getOperation() == PermissionSetChange.SetOperation.SET_OPERATION_ADDED) {
                 if (permissionSetChange.hasChildMember()) {
                     memberToSetRecordCount.incrementAndGet();
-                    //MaterializeDB.addMemberToSetEvent(response);
                 } else {
                     setToSetRecordCount.incrementAndGet();
-                    //MaterializeDB.addSetToSetEvent(response);
                 }
             }
         }
