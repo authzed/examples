@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class MaterializeClient {
 
-    private static final String BEARER_TOKEN = "sdbpk_62592e884be49ff6eeee54c4a65585169317d163827c35203948773f340fc3390e981b8df2c89033439be3b4d5dbb6d16b82baad81fbbdd301b4b1ea06b66f99e2c8d3d2ce686a84c9a80ce08bbbd746d1039823fb9de2be2bec7df87e69e7f8";
+    private static final String BEARER_TOKEN = "some token";
     private static final String SERVER_HOST = "localhost";
     private static final int SERVER_PORT = 50054;
     private static final String CURSOR_FILE = "cursor.txt";
