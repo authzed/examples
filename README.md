@@ -16,7 +16,7 @@ Developers create a schema that models their permissions requirements and use a 
 
 Examples in this repository include:
 
-- Schema
+- How to set up SpiceDB with tracing: see [tracing](./tracing)
 - CI/CD Workflows
 
 Have questions? Join our [Discord].
