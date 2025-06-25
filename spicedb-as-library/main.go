@@ -2,36 +2,41 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 
 	v1 "github.com/authzed/authzed-go/proto/authzed/api/v1"
 	"github.com/authzed/spicedb/pkg/cmd/datastore"
 	"github.com/authzed/spicedb/pkg/cmd/server"
 	"github.com/authzed/spicedb/pkg/cmd/util"
+	"golang.org/x/sync/errgroup"
 )
 
 func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	srv, err := newServer(ctx)
+	server, err := newSpiceDBServer(ctx)
 	if err != nil {
-		log.Fatal("unable to init server: %w", err)
+		log.Fatal("unable to configure server: ", err)
 	}
 
-	conn, err := srv.GRPCDialContext(ctx)
-	if err != nil {
-		log.Fatal("unable to get gRPC connection: %w", err)
+	var wg errgroup.Group
+	wg.Go(func() error {
+		if err := server.Run(ctx); err != nil {
+			log.Print("error while running server: ", err)
+			return err
+		}
+		return nil
+	})
+
+	conn, err := server.GRPCDialContext(ctx)
+	if err != nil || conn == nil {
+		log.Fatal("unable to get gRPC connection: ", err)
 	}
 
 	schemaSrv := v1.NewSchemaServiceClient(conn)
 	permSrv := v1.NewPermissionsServiceClient(conn)
-
-	go func() {
-		if err := srv.Run(ctx); err != nil {
-			log.Print("error while shutting down server: %w", err)
-		}
-	}()
 
 	_, err = schemaSrv.WriteSchema(ctx, &v1.WriteSchemaRequest{
 		Schema: `definition user {}
@@ -41,7 +46,7 @@ func main() {
                  }`,
 	})
 	if err != nil {
-		log.Fatal("unable to get gRPC connection: %w", err)
+		log.Fatal("unable to write schema: ", err)
 	}
 
 	resp, err := permSrv.WriteRelationships(ctx, &v1.WriteRelationshipsRequest{Updates: []*v1.RelationshipUpdate{
@@ -63,7 +68,7 @@ func main() {
 		},
 	}})
 	if err != nil {
-		log.Fatal("unable to get gRPC connection: %w", err)
+		log.Fatal("unable to write relationships: ", err)
 	}
 
 	token := resp.GetWrittenAt()
@@ -82,19 +87,21 @@ func main() {
 		},
 	})
 	if err != nil {
-		log.Fatal("unable to issue PermissionCheck: %w", err)
+		log.Fatal("unable to issue PermissionCheck: ", err)
 	}
 
 	log.Printf("check result: %s", checkResp.Permissionship.String())
+	cancel()
+	wg.Wait()
 }
 
-func newServer(ctx context.Context) (server.RunnableServer, error) {
+func newSpiceDBServer(ctx context.Context) (server.RunnableServer, error) {
 	ds, err := datastore.NewDatastore(ctx,
 		datastore.DefaultDatastoreConfig().ToOption(),
 		datastore.WithRequestHedgingEnabled(false),
 	)
 	if err != nil {
-		log.Fatalf("unable to start memdb datastore: %s", err)
+		return nil, fmt.Errorf("unable to start memdb datastore: %s", err)
 	}
 
 	configOpts := []server.ConfigOption{
@@ -106,7 +113,7 @@ func newServer(ctx context.Context) (server.RunnableServer, error) {
 			return ctx, nil
 		}),
 		server.WithHTTPGateway(util.HTTPServerConfig{HTTPEnabled: false}),
-		server.WithMetricsAPI(util.HTTPServerConfig{HTTPEnabled: true}),
+		server.WithMetricsAPI(util.HTTPServerConfig{HTTPEnabled: false}),
 		// disable caching since it's all in memory
 		server.WithDispatchCacheConfig(server.CacheConfig{Enabled: false, Metrics: false}),
 		server.WithNamespaceCacheConfig(server.CacheConfig{Enabled: false, Metrics: false}),
