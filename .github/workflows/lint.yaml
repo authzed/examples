@@ -11,8 +11,9 @@ jobs:
     name: "Lint"
     runs-on: "ubuntu-latest"
     steps:
-      - uses: "actions/checkout@v3"
+      - uses: "actions/checkout@v4"
       - uses: "authzed/actions/yaml-lint@main"
-      - uses: "instrumenta/kubeval-action@5915e4adba5adccac07cb156b82e54c3fed74921"
-        with:
-          files: "kubernetes"
+      - name: "Set up Kubeconform"
+        uses: "bmuschko/setup-kubeconform@v1"
+      - name: "Validate manifests"
+        run: "kubeconform -summary -verbose ./kubernetes"

@@ -18,6 +18,7 @@ Examples in this repository include:
 
 - How to set up SpiceDB with tracing: see [tracing](./tracing)
 - How to invoke SpiceDB as a library: see [library](./library)
+- How to run SpiceDB in a Kubernetes cluster: see [kubernetes](./kubernetes)
 - CI/CD Workflows
 
 Have questions? Join our [Discord].
