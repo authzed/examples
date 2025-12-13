@@ -1,29 +1,4 @@
-# Caveats for conditional access
+# Simple Attribute Based Access Control (ABAC)
 
-Models the use of caveats, which allows for conditional access based on information provided at _runtime_ to permission checks.
+Access can be granted to users based on information provided at runtime to permission checks.
 
----
-
-## Schema
-
-```
-definition user {}
-
-/**
- * only allowed on tuesdays. `day_of_week` can be provided either at the time
- * the relationship is written, or in the CheckPermission API call.
- */
-caveat only_on_tuesday(day_of_week string) {
-  day_of_week == 'tuesday'
-}
-
-definition document {
-    /**
-     * reader indicates that the user is a reader on the document, either
-     * directly or only on tuesday.
-     */
-    relation reader: user | user with only_on_tuesday
-
-    permission view = reader
-}
-```

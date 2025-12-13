@@ -1,42 +1,57 @@
 ---
 schema: |-
+  /**
+   * an entity that can be granted permissions
+   */
   definition user {}
 
   /**
-   * only allowed on tuesdays. `day_of_week` can be provided either at the time
-   * the relationship is written, or in the CheckPermission API call.
+   * a resource that we are trying to protect
    */
-  caveat only_on_tuesday(day_of_week string) {
-    day_of_week == 'tuesday'
-  }
-
-  caveat ip_allowlist(user_ip ipaddress, cidr string) {
-    user_ip.in_cidr(cidr)
-  }
-
   definition document {
       /**
-       * reader indicates that the user is a reader on the document, either directly,
-       * only on tuesday, or from allowed IPs.
+       * users can be made readers of specific documents,
+       * either directly, or only if they have a valid IP, or only if they aren't rate limited.
        */
-      relation reader: user | user with only_on_tuesday | user with ip_allowlist
+      relation reader: user | user with has_valid_ip | user with not_rate_limited
 
+      /**
+       * if a user has the reder relationship to a specific document, they automatically get permission to view it
+       */
       permission view = reader
   }
+
+    /**
+     * only allowed if the IP address is allowed.
+     * we can provide cidr at the time we write the relation, and
+     * we can provide user_ip at the time the CheckPermission is made.
+     */
+    caveat has_valid_ip(user_ip ipaddress, cidr string) {
+      user_ip.in_cidr(cidr)
+    }
+
+    /**
+     * only allowed if rate limits haven't been exceeded.
+     * we can provide allowed_max at the time we write the relation, and
+     * we can provide current at the time the CheckPermission is made.
+     */
+    caveat not_rate_limited(allowed_max int, current int) {
+      current < allowed_max
+    }
 relationships: |-
   document:firstdoc#reader@user:fred
-  document:firstdoc#reader@user:tom[only_on_tuesday]
-  document:firstdoc#reader@user:alice[ip_allowlist:{"cidr":"1.2.3.0/24"}]
+  document:firstdoc#reader@user:tom[not_rate_limited:{"allowed_max":100}]
+  document:firstdoc#reader@user:alice[has_valid_ip:{"cidr":"1.2.3.0/24"}]
 assertions:
   assertTrue:
-    - 'document:firstdoc#view@user:tom with {"day_of_week": "tuesday"}'
+    - 'document:firstdoc#view@user:tom with {"current": 1}'
     - "document:firstdoc#view@user:fred"
     - 'document:firstdoc#view@user:alice with {"user_ip": "1.2.3.4"}'
   assertCaveated:
     - "document:firstdoc#view@user:tom"
     - "document:firstdoc#view@user:alice"
   assertFalse:
-    - 'document:firstdoc#view@user:tom with {"day_of_week": "wednesday"}'
+    - 'document:firstdoc#view@user:tom with {"current": 500}'
     - 'document:firstdoc#view@user:alice with {"user_ip": "8.8.8.8"}'
 validation:
   document:firstdoc#view:
