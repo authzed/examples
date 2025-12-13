@@ -1,31 +1,42 @@
 ---
 schema: |-
+  /**
+   * an entity that can be granted permissions.
+   * users can be part of groups.
+   */
   definition user {}
-
-  definition resource {
-      relation manager: user | usergroup#member | usergroup#manager
-      relation viewer: user | usergroup#member | usergroup#manager
-
-      permission manage = manager
-      permission view = viewer + manager
+  
+  /**
+   * we can model groups as having a parent group...
+   */
+  definition group_with_parent {
+     relation parent: group_with_parent
+     relation member: user
+    
+     permission view = member + parent->member
+  }
+  
+  /**
+   * ...or we can model a group as having children.
+   */
+  definition group_with_child {
+    relation child: user | group_with_child#child
+    
+    permission view = child
   }
 
-  definition usergroup {
-      relation manager: user | usergroup#member | usergroup#manager
-      relation direct_member: user | usergroup#member | usergroup#manager
+  /**
+   * a resource that we are trying to protect
+   */
+  definition document {
+      /**
+       * we can give viewer relation to a specific user,
+       * or to a group that has parents,
+       * or to a group that has children.
+       */
+      relation viewer: user | group_with_parent#view | group_with_child#view
 
-      permission member = direct_member + manager
-  }
-
-  definition organization {
-      relation group: usergroup
-      relation administrator: user | usergroup#member | usergroup#manager
-      relation direct_member: user
-
-      relation resource: resource
-
-      permission admin = administrator
-      permission member = direct_member + administrator + group->member
+      permission view = viewer
   }
 
 relationships: |-
@@ -48,20 +59,20 @@ relationships: |-
   organization:org1#group@usergroup:applications
   organization:org1#group@usergroup:engineering
 
-  // Add some resources under the organization.
-  organization:org1#resource@resource:promserver
-  organization:org1#resource@resource:jira
+  // Add some documents under the organization.
+  organization:org1#document@document:promserver
+  organization:org1#document@document:jira
 
   // Set a group's members and a user as the administrators of the organization.
   organization:org1#administrator@usergroup:csuite#member
   organization:org1#administrator@user:it_admin
 
-  // Set the permissions on some resources.
-  resource:promserver#manager@usergroup:productname#member
-  resource:promserver#viewer@usergroup:engineering#member
-  resource:jira#viewer@usergroup:engineering#member
-  resource:jira#manager@usergroup:engineering#manager
-  resource:promserver#viewer@user:an_external_user
+  // Set the permissions on some documents.
+  document:promserver#manager@usergroup:productname#member
+  document:promserver#viewer@usergroup:engineering#member
+  document:jira#viewer@usergroup:engineering#member
+  document:jira#manager@usergroup:engineering#manager
+  document:promserver#viewer@user:an_external_user
 
   usergroup:blackhats#manager@user:a_villain
 
@@ -81,10 +92,10 @@ validation:
     - "[usergroup:applications#member] is <usergroup:engineering#direct_member>"
     - "[usergroup:csuite#member] is <organization:org1#administrator>/<usergroup:engineering#direct_member>"
     - "[usergroup:productname#member] is <usergroup:applications#direct_member>"
-  resource:jira#manage:
+  document:jira#manage:
     - "[user:cto] is <usergroup:engineering#manager>"
-    - "[usergroup:engineering#manager] is <resource:jira#manager>"
-  resource:jira#view:
+    - "[usergroup:engineering#manager] is <document:jira#manager>"
+  document:jira#view:
     - "[user:an_eng_director] is <usergroup:applications#manager>"
     - "[user:an_eng_manager] is <usergroup:productname#manager>"
     - "[user:an_engineer] is <usergroup:productname#direct_member>"
@@ -92,21 +103,21 @@ validation:
     - "[user:cto] is <usergroup:csuite#direct_member>/<usergroup:engineering#manager>"
     - "[usergroup:applications#member] is <usergroup:engineering#direct_member>"
     - "[usergroup:csuite#member] is <usergroup:engineering#direct_member>"
-    - "[usergroup:engineering#manager] is <resource:jira#manager>"
-    - "[usergroup:engineering#member] is <resource:jira#viewer>"
+    - "[usergroup:engineering#manager] is <document:jira#manager>"
+    - "[usergroup:engineering#member] is <document:jira#viewer>"
     - "[usergroup:productname#member] is <usergroup:applications#direct_member>"
-  resource:promserver#manage:
+  document:promserver#manage:
     - "[user:an_eng_manager] is <usergroup:productname#manager>"
     - "[user:an_engineer] is <usergroup:productname#direct_member>"
-    - "[usergroup:productname#member] is <resource:promserver#manager>"
-  resource:promserver#view:
+    - "[usergroup:productname#member] is <document:promserver#manager>"
+  document:promserver#view:
     - "[user:an_eng_director] is <usergroup:applications#manager>"
     - "[user:an_eng_manager] is <usergroup:productname#manager>"
     - "[user:an_engineer] is <usergroup:productname#direct_member>"
-    - "[user:an_external_user] is <resource:promserver#viewer>"
+    - "[user:an_external_user] is <document:promserver#viewer>"
     - "[user:ceo] is <usergroup:csuite#manager>"
     - "[user:cto] is <usergroup:csuite#direct_member>/<usergroup:engineering#manager>"
     - "[usergroup:applications#member] is <usergroup:engineering#direct_member>"
     - "[usergroup:csuite#member] is <usergroup:engineering#direct_member>"
-    - "[usergroup:engineering#member] is <resource:promserver#viewer>"
-    - "[usergroup:productname#member] is <resource:promserver#manager>/<usergroup:applications#direct_member>"
+    - "[usergroup:engineering#member] is <document:promserver#viewer>"
+    - "[usergroup:productname#member] is <document:promserver#manager>/<usergroup:applications#direct_member>"
