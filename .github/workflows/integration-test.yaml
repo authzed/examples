@@ -1,0 +1,19 @@
+---
+name: "Test"
+on:  # yamllint disable-line rule:truthy
+  push:
+    paths: ["integration-testing/**"]
+  pull_request:
+    paths: ["integration-testing/**"]
+permissions:
+  contents: "read"
+jobs:
+  integration-testing:
+    name: "Run Integration Test Example"
+    runs-on: "ubuntu-latest"
+    steps:
+      - uses: "actions/checkout@v6"
+      - uses: "actions/setup-go@v6"
+      - uses: "authzed/actions/go-test@main"
+        with:
+          working_directory: "integration-testing"

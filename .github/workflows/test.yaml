@@ -2,21 +2,13 @@
 name: "Test"
 on:  # yamllint disable-line rule:truthy
   push:
-    paths: ["integration-testing/**"]
+    branches:
+      - "main"
   pull_request:
-    paths: ["integration-testing/**"]
+    branches: ["*"]
 permissions:
   contents: "read"
 jobs:
-  integration-testing:
-    name: "Run Integration Test Example"
-    runs-on: "ubuntu-latest"
-    steps:
-      - uses: "actions/checkout@v6"
-      - uses: "actions/setup-go@v6"
-      - uses: "authzed/actions/go-test@main"
-        with:
-          working_directory: "integration-testing"
   validate-example-schemas:
     name: "Validate Example Schemas"
     runs-on: "ubuntu-latest"
@@ -24,8 +16,9 @@ jobs:
       - uses: "actions/checkout@v6"
       - name: "Install zed and run validate"
         run: |
-          curl -L https://github.com/authzed/zed/releases/latest/download/zed-linux-amd64 -o zed
-          chmod +x zed
+          # TODO can we download the latest?
+          curl -L https://github.com/authzed/zed/releases/download/v0.33.1/zed_0.33.1_linux_amd64.deb -o zed.deb
+          sudo dpkg -i zed.deb
           for schema_file in $(find schemas -name "schema-and-data.yaml" -type f); do
             schema_dir=$(dirname "$schema_file")
             echo "Validating $schema_file..."
