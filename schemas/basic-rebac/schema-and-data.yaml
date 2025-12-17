@@ -1,32 +1,31 @@
 ---
 schema: |-
   /**
-   * user represents a user that can be granted role(s)
+   * an entity that can be granted permissions
    */
   definition user {}
 
   /**
-   * document represents a document protected by Authzed.
+   * a resource that we are trying to protect
    */
   definition document {
       /**
-       * writer indicates that the user is a writer on the document.
+       * users can be made writers of specific documents
        */
       relation writer: user
 
       /**
-       * reader indicates that the user is a reader on the document.
+       * users can be made readers of specific documents
        */
       relation reader: user
 
       /**
-       * edit indicates that the user has permission to edit the document.
+       * if a user has the writer relationship to a specific document, they automatically get permission to edit it
        */
       permission edit = writer
 
       /**
-       * view indicates that the user has permission to view the document, if they
-       * are a `reader` *or* have `edit` permission.
+       * if a user has the reader relation to a document OR the permission to edit a document (or both), they automatically get permission to view it
        */
       permission view = reader + edit
   }

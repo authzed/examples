@@ -1,29 +1,3 @@
 # Super-admin / site-wide permissions
 
-Models providing site-wide (or superuser) permissions for all resources of a specific type
-
----
-
-## Schema
-
-```
-definition platform {
-    relation administrator: user
-    permission super_admin = administrator
-}
-
-definition organization {
-    // The platform is generally a singleton pointing to the same
-    // platform object, on which the superuser is in turn granted
-    // access.
-    relation platform: platform
-    permission admin = platform->super_admin
-}
-
-definition resource {
-    relation owner: user | organization
-    permission admin = owner + owner->admin
-}
-
-definition user {}
-```
+Access is granted to all resources of a specific type to a super-admin user.

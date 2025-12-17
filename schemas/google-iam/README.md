@@ -1,4 +1,4 @@
-# Google IAM in SpiceDB
+# Google IAM
 
 Models the permissions of Google's Cloud IAM in SpiceDB. Blog post: https://authzed.com/blog/google-cloud-iam-modeling/
 

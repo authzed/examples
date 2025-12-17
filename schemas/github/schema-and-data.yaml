@@ -1,0 +1,126 @@
+---
+schema: |-
+  definition user {}
+
+  definition team {
+      relation parent: organization | team
+      relation maintainer: user
+      relation direct_member: user
+
+      permission member = maintainer + direct_member
+      permission change_team_name = maintainer + parent->change_team_name
+  }
+
+  definition organization {
+      relation own: user
+      relation member: user
+      relation billing_manager: user
+      relation team_maintainer: user
+
+      // Repository actions
+      permission create_repository = owner + member
+
+      // Organization settings
+      permission manage_billing = owner + billing_manager
+      permission user_seat = owner + member + team_maintainer
+      permission owner = own
+
+      // Team permissions
+      permission change_team_name = team_maintainer + owner
+  }
+
+  definition repository {
+      relation organization: organization
+
+      // Repository roles
+      relation reader: user | team#member
+      relation triager: user | team#member
+      relation writer: user | team#member
+      relation maintainer: user | team#member
+      relation admin: user | team#member
+
+      // Git Actions
+      permission clone = reader + triager + push
+      permission push = writer + maintainer + admin + organization->owner
+
+      // Web actions
+      permission read = reader + triager + writer + maintainer + admin + organization->owner
+      permission delete = admin + organization->owner
+
+      // Issues
+      permission create_issue = read
+      permission close_issue = triager + writer + maintainer + admin + organization->owner
+
+      // Pull requests
+      permission create_pull_request = read
+      permission merge_pull_request = maintainer + organization->owner
+      permission close_pull_request = triager + writer + maintainer + admin + organization->owner
+
+      // Coarse grained
+      permission manage_setting = maintainer + admin + organization->owner
+      permission manage_sensitive_setting = admin + organization->owner
+  }
+relationships: |-
+  repository:authzed_go#organization@organization:authzed#...
+
+  repository:authzed_go#reader@user:jake#...
+  repository:authzed_go#admin@user:jimmy#...
+  repository:authzed_go#triager@user:jessica#...
+
+  repository:authzed_go#maintainer@team:support_engineers#member
+
+  organization:authzed#own@user:jake#...
+  organization:authzed#own@user:jimmy#...
+
+  team:support_engineers#maintainer@user:ivan#...
+  team:support_engineers#direct_member@user:ian#...
+  team:support_engineers#parent@organization:authzed#...
+
+  team:emea_support_engineers#direct_member@user:iona#...
+  team:emea_support_engineers#parent@team:support_engineers#...
+assertions:
+  assertTrue:
+    - "repository:authzed_go#clone@user:jake#..."
+    - "repository:authzed_go#clone@user:jimmy#..."
+validation:
+  organization:authzed#manage_billing:
+    - "[user:jake] is <organization:authzed#own>"
+    - "[user:jimmy] is <organization:authzed#own>"
+  organization:authzed#user_seat:
+    - "[user:jake] is <organization:authzed#own>"
+    - "[user:jimmy] is <organization:authzed#own>"
+  repository:authzed_go#clone:
+    - "[team:support_engineers#member] is <repository:authzed_go#maintainer>"
+    - "[user:ian] is <team:support_engineers#direct_member>"
+    - "[user:ivan] is <team:support_engineers#maintainer>"
+    - "[user:jake] is <organization:authzed#own>/<repository:authzed_go#reader>"
+    - "[user:jessica] is <repository:authzed_go#triager>"
+    - "[user:jimmy] is <organization:authzed#own>/<repository:authzed_go#admin>"
+  repository:authzed_go#close_pull_request:
+    - "[team:support_engineers#member] is <repository:authzed_go#maintainer>"
+    - "[user:ian] is <team:support_engineers#direct_member>"
+    - "[user:ivan] is <team:support_engineers#maintainer>"
+    - "[user:jake] is <organization:authzed#own>"
+    - "[user:jessica] is <repository:authzed_go#triager>"
+    - "[user:jimmy] is <organization:authzed#own>/<repository:authzed_go#admin>"
+  repository:authzed_go#create_issue:
+    - "[team:support_engineers#member] is <repository:authzed_go#maintainer>"
+    - "[user:ian] is <team:support_engineers#direct_member>"
+    - "[user:ivan] is <team:support_engineers#maintainer>"
+    - "[user:jake] is <organization:authzed#own>/<repository:authzed_go#reader>"
+    - "[user:jessica] is <repository:authzed_go#triager>"
+    - "[user:jimmy] is <organization:authzed#own>/<repository:authzed_go#admin>"
+  repository:authzed_go#push:
+    - "[team:support_engineers#member] is <repository:authzed_go#maintainer>"
+    - "[user:ian] is <team:support_engineers#direct_member>"
+    - "[user:ivan] is <team:support_engineers#maintainer>"
+    - "[user:jake] is <organization:authzed#own>"
+    - "[user:jimmy] is <organization:authzed#own>/<repository:authzed_go#admin>"
+  team:emea_support_engineers#change_team_name:
+    - "[user:ivan] is <team:support_engineers#maintainer>"
+    - "[user:jake] is <organization:authzed#own>"
+    - "[user:jimmy] is <organization:authzed#own>"
+  team:support_engineers#change_team_name:
+    - "[user:ivan] is <team:support_engineers#maintainer>"
+    - "[user:jake] is <organization:authzed#own>"
+    - "[user:jimmy] is <organization:authzed#own>"

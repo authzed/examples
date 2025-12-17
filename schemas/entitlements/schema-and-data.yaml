@@ -1,0 +1,56 @@
+---
+schema: |-
+  /**
+  * an entity that can be granted permissions
+  */
+  definition user {}
+
+  /**
+  * organizations contain users
+  */
+  definition organization {
+    relation member: user
+  }
+
+  /**
+  * an entitlement is a grant given to an organization
+  */
+  definition entitlement {
+    relation org: organization
+    permission subscribed_member = org->member
+  }
+
+  /**
+   * features are given to entitlements
+   */
+  definition feature {
+    relation associated_entitlement: entitlement
+    permission access = associated_entitlement->subscribed_member
+  }
+
+relationships: |-
+  // Add two users to organizations
+  organization:github#member@user:maria
+  organization:acme#member@user:frank
+
+  // Assign entitlements to the organizations
+  entitlement:pro_plan#org@organization:github
+  entitlement:free_plan#org@organization:acme
+
+  // Assign features to the entitlements
+  feature:download_analytics#associated_entitlement@entitlement:pro_plan
+  feature:view_analytics#associated_entitlement@entitlement:free_plan
+  feature:view_analytics#associated_entitlement@entitlement:pro_plan
+assertions:
+  assertTrue:
+    - "feature:download_analytics#access@user:maria"
+    - "feature:view_analytics#access@user:maria"
+    - "feature:view_analytics#access@user:frank"
+  assertFalse:
+    - "feature:download_analytics#access@user:frank"
+validation:
+  feature:download_analytics#access:
+    - "[user:maria] is <organization:github#member>"
+  feature:view_analytics#access:
+    - "[user:frank] is <organization:acme#member>"
+    - "[user:maria] is <organization:github#member>"

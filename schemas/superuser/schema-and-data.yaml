@@ -1,30 +1,43 @@
 ---
 schema: |-
-  definition platform {
-  	relation administrator: user
-  	permission super_admin = administrator
-  }
-
-  definition organization {
-    // The platform is generally a singleton pointing to the same
-    // platform object, on which the superuser is in turn granted
-    // access.
-  	relation platform: platform
-  	permission admin = platform->super_admin
-  }
-
-  definition resource {
-  	relation owner: user | organization
-  	permission admin = owner + owner->admin
-  }
-
+  /** an entity that can be granted permissions */
   definition user {}
+
+  /** a resource that we are trying to protect */
+  definition document {
+      /**
+       * a specific user or a specific organization can be made owner of a document
+       */
+      relation owner: user | organization
+
+      /**
+       * if a user has the (direct) owner relation OR if they are admin of the owner organization, they get the admin permission on the document
+       */
+      permission admin = owner + owner->admin
+  }
+
+  /** organizations can own documents */
+  definition organization {
+      /** the organization can be linked to one platform */
+      relation platform: platform
+
+      /**
+       * if a user has the super_admin permission on the platform, they get the admin permission on the organization
+       */
+      permission admin = platform->super_admin
+  }
+
+  /** a root object with administrators */
+  definition platform {
+      relation administrator: user
+      permission super_admin = administrator
+  }
 relationships: |-
   platform:evilempire#administrator@user:drevil
   organization:virtucon#platform@platform:evilempire
-  resource:lasers#owner@organization:virtucon
+  document:lasers#owner@organization:virtucon
 assertions:
   assertTrue:
-    - "resource:lasers#admin@user:drevil"
+    - "document:lasers#admin@user:drevil"
   assertFalse: null
 validation: null
