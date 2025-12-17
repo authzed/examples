@@ -5,15 +5,35 @@ on:  # yamllint disable-line rule:truthy
     paths: ["integration-testing/**"]
   pull_request:
     paths: ["integration-testing/**"]
+permissions:
+  contents: "read"
 jobs:
   integration-testing:
     name: "Run Integration Test Example"
     runs-on: "ubuntu-latest"
     steps:
-      - uses: "actions/checkout@v3"
-      - uses: "actions/setup-go@v3"
-        with:
-          go-version: "~1.19.1"
+      - uses: "actions/checkout@v6"
+      - uses: "actions/setup-go@v6"
       - uses: "authzed/actions/go-test@main"
         with:
           working_directory: "integration-testing"
+  validate-example-schemas:
+    name: "Validate Example Schemas"
+    runs-on: "ubuntu-latest"
+    steps:
+      - uses: "actions/checkout@v6"
+      - name: "Install zed and run validate"
+        run: |
+          curl -L https://github.com/authzed/zed/releases/latest/download/zed-linux-amd64 -o zed
+          chmod +x zed
+          for schema_file in $(find schemas -name "schema-and-data.yaml" -type f); do
+            schema_dir=$(dirname "$schema_file")
+            echo "Validating $schema_file..."
+            if ! zed validate "$schema_file"; then
+              echo "Validation failed for $schema_file"
+              exit_code=1
+            else
+              echo "Validation passed for $schema_file"
+            fi
+          done
+          exit $exit_code
