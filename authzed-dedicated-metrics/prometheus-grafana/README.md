@@ -58,6 +58,10 @@ Here's an example of a filled-out configuration:
 
 4. Run `docker compose up`
 
+### Grafana dashboard
+
+This example auto-provisions the SpiceDB Grafana dashboard from `grafana/dashboards/spicedb_grafana_dash.json` when Grafana starts.
+
 ### Ports:
 
 Prometheus: 9090
