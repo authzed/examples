@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  weaviate:
+    image: cr.weaviate.io/semitechnologies/weaviate:latest
+    ports:
+      - "8080:8080"  # HTTP and gRPC both use this port
+    environment:
+      QUERY_DEFAULTS_LIMIT: 25
+      AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: 'true'
+      PERSISTENCE_DATA_PATH: '/var/lib/weaviate'
+      DEFAULT_VECTORIZER_MODULE: 'text2vec-openai'
+      ENABLE_MODULES: 'text2vec-openai'
+      CLUSTER_HOSTNAME: 'node1'
+      OPENAI_APIKEY: ${OPENAI_API_KEY}
+    volumes:
+      - weaviate_data:/var/lib/weaviate
+    env_file:
+      - .env
+
+  spicedb:
+    image: authzed/spicedb:latest
+    command: serve --grpc-preshared-key "devtoken"
+    ports:
+      - "50051:50051"
+    environment:
+      SPICEDB_DATASTORE_ENGINE: memory
+
+volumes:
+  weaviate_data:

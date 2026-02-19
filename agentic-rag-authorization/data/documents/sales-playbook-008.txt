@@ -1,0 +1,29 @@
+Title: Sales Playbook - 008
+Department: sales
+Classification: internal
+Type: Sales Playbook
+
+Target Segment: Enterprise
+
+Discovery Questions:
+- What are your current pain points?
+- What solutions have you tried?
+- What are your goals?
+
+Qualification Criteria:
+- Budget confirmed
+- Timeline defined
+- Decision makers identified
+
+Demo Flow:
+1. Understand needs
+2. Show relevant features
+3. Address concerns
+4. Propose next steps
+
+Closing Strategies:
+Trial close throughout
+Summarize value
+Address final objections
+
+Success Metrics: Close rate, deal size, sales cycle length

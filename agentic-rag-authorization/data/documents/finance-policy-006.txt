@@ -1,0 +1,23 @@
+Title: Finance Policy - 006
+Department: finance
+Classification: internal
+Type: Finance Policy
+
+Policy: Financial Control Policy 006
+
+Objective:
+Ensure proper financial controls and compliance
+
+Guidelines:
+- Follow approval hierarchies
+- Maintain documentation
+- Regular audits
+- Expense limits
+
+Approval Requirements:
+Manager approval: Up to $5K
+Director approval: Up to $50K
+CFO approval: Above $50K
+
+Compliance: SOX compliance required
+Regular internal audits

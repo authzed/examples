@@ -1,0 +1,18 @@
+# Core dependencies
+langchain>=0.1.0
+langchain-openai>=0.1.0
+langgraph>=0.0.20
+weaviate-client>=3.26.0,<4.0  # v3 for REST API stability (no gRPC issues)
+authzed>=0.7.0
+python-dotenv>=1.0.0
+grpcio>=1.50.0
+grpcio-tools>=1.50.0
+
+# Web UI dependencies
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+
+# Development dependencies
+pytest>=7.0.0
+pytest-asyncio>=0.21.0
+ruff>=0.1.0

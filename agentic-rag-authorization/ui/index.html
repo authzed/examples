@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agentic RAG Authorization Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f9fafb;
+            color: #1f2937;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 40px 0 20px;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            color: #111827;
+        }
+
+        header p {
+            font-size: 1.1rem;
+            color: #6b7280;
+        }
+
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 24px;
+            margin: 20px 0;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .card h2 {
+            font-size: 1.5rem;
+            margin-bottom: 16px;
+            color: #111827;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #374151;
+        }
+
+        select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-family: inherit;
+        }
+
+        select:focus, textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .user-info {
+            display: inline-block;
+            margin-left: 16px;
+            padding: 6px 12px;
+            background: #f3f4f6;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            color: #4b5563;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #2563eb;
+        }
+
+        .btn-secondary {
+            background: #f3f4f6;
+            color: #374151;
+            border: 1px solid #d1d5db;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: #e5e7eb;
+        }
+
+        .stats {
+            display: flex;
+            gap: 20px;
+            padding: 16px;
+            background: #f9fafb;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            font-size: 0.95rem;
+        }
+
+        .stat-item strong {
+            color: #111827;
+        }
+
+        .doc-section {
+            margin-top: 24px;
+        }
+
+        .doc-section h3 {
+            font-size: 1.2rem;
+            margin-bottom: 12px;
+            color: #111827;
+        }
+
+        .doc-card {
+            padding: 16px;
+            margin-bottom: 12px;
+            border-radius: 6px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .doc-card.authorized {
+            background: #f0fdf4;
+            border-color: #86efac;
+        }
+
+        .doc-card.denied {
+            background: #fef2f2;
+            border-color: #fecaca;
+        }
+
+        .doc-card-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .doc-icon {
+            font-size: 1.2rem;
+        }
+
+        .doc-title {
+            font-weight: 600;
+            color: #111827;
+            flex: 1;
+        }
+
+        .doc-id {
+            font-size: 0.85rem;
+            color: #6b7280;
+            font-family: 'Courier New', monospace;
+        }
+
+        .doc-content {
+            color: #4b5563;
+            font-size: 0.95rem;
+            margin-top: 8px;
+        }
+
+        .doc-reason {
+            color: #991b1b;
+            font-size: 0.9rem;
+            font-style: italic;
+            margin-top: 4px;
+        }
+
+        .answer-section {
+            margin-top: 24px;
+        }
+
+        .answer-section h3 {
+            font-size: 1.2rem;
+            margin-bottom: 12px;
+            color: #111827;
+        }
+
+        .answer-content {
+            padding: 20px;
+            background: #f9fafb;
+            border-left: 4px solid #3b82f6;
+            border-radius: 6px;
+            color: #374151;
+            line-height: 1.7;
+        }
+
+        .error-card {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+        }
+
+        .error-card h2 {
+            color: #991b1b;
+        }
+
+        .error-message {
+            color: #991b1b;
+            padding: 12px;
+            background: white;
+            border-radius: 6px;
+            margin-top: 12px;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #f3f4f6;
+            border-top-color: #3b82f6;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            margin-left: 8px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #6b7280;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔐 Agentic RAG Authorization Demo</h1>
+            <p>Demonstrating fine-grained authorization with SpiceDB</p>
+        </header>
+
+        <div class="card">
+            <h2>User Selection</h2>
+            <div class="form-group">
+                <label for="userSelect">Select User:</label>
+                <select id="userSelect">
+                    <option value="">Loading users...</option>
+                </select>
+                <span id="userDepartment" class="user-info">Department: -</span>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Query</h2>
+            <div class="form-group">
+                <label for="queryInput">Enter your query:</label>
+                <textarea id="queryInput" placeholder="What are our microservices architecture patterns?"></textarea>
+            </div>
+            <div class="button-group">
+                <button id="submitButton" class="btn-primary">Submit Query</button>
+                <select id="exampleQueries" class="btn-secondary">
+                    <option value="">-- Try an example --</option>
+                </select>
+            </div>
+        </div>
+
+        <div id="resultsCard" class="card hidden">
+            <h2>Results</h2>
+            <div id="stats" class="stats"></div>
+
+            <div id="authorizedSection" class="doc-section"></div>
+            <div id="deniedSection" class="doc-section"></div>
+            <div id="answerSection" class="answer-section"></div>
+        </div>
+
+        <div id="errorCard" class="card error-card hidden">
+            <h2>Error</h2>
+            <div id="errorMessage" class="error-message"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/api';
+
+        // Example queries mapped to users
+        const EXAMPLE_QUERIES = [
+            { query: "What are our microservices architecture patterns?", user: "alice" },
+            { query: "What sales proposals do we have?", user: "bob" },
+            { query: "What HR policies do we have?", user: "hr_manager" },
+            { query: "What are the quarterly financial reports?", user: "finance_manager" },
+            { query: "What are the company handbook guidelines?", user: "bob" },
+            { query: "Show me sales proposals", user: "alice" },
+        ];
+
+        let users = [];
+
+        // Load users on page load
+        async function loadUsers() {
+            try {
+                const response = await fetch(`${API_BASE}/users`);
+                const data = await response.json();
+
+                if (data.success) {
+                    users = data.data.users;
+                    const select = document.getElementById('userSelect');
+                    select.innerHTML = '';
+
+                    users.forEach(user => {
+                        const option = document.createElement('option');
+                        option.value = user.id;
+                        option.textContent = `${user.name} (${user.department})`;
+                        option.dataset.department = user.department;
+                        select.appendChild(option);
+                    });
+
+                    updateDepartment();
+                }
+            } catch (error) {
+                console.error('Failed to load users:', error);
+                document.getElementById('userSelect').innerHTML = '<option value="">Error loading users</option>';
+            }
+        }
+
+        // Update department display
+        function updateDepartment() {
+            const select = document.getElementById('userSelect');
+            const option = select.options[select.selectedIndex];
+            const department = option.dataset.department || '-';
+            document.getElementById('userDepartment').innerHTML = `Department: <strong>${department}</strong>`;
+        }
+
+        // Submit query
+        async function submitQuery() {
+            const query = document.getElementById('queryInput').value.trim();
+            const subject_id = document.getElementById('userSelect').value;
+
+            if (!query) {
+                alert('Please enter a query');
+                return;
+            }
+
+            if (!subject_id) {
+                alert('Please select a user');
+                return;
+            }
+
+            // Hide previous results/errors
+            document.getElementById('resultsCard').classList.add('hidden');
+            document.getElementById('errorCard').classList.add('hidden');
+
+            // Show loading state
+            const submitButton = document.getElementById('submitButton');
+            submitButton.disabled = true;
+            submitButton.innerHTML = 'Processing<span class="loading"></span>';
+
+            try {
+                const response = await fetch(`${API_BASE}/query`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query, subject_id, max_attempts: 1 })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    displayResults(result.data);
+                } else {
+                    displayError(result.error.message || 'Unknown error occurred');
+                }
+            } catch (error) {
+                displayError(error.message);
+            } finally {
+                submitButton.disabled = false;
+                submitButton.textContent = 'Submit Query';
+            }
+        }
+
+        // Display results
+        function displayResults(data) {
+            document.getElementById('errorCard').classList.add('hidden');
+            document.getElementById('resultsCard').classList.remove('hidden');
+
+            // Stats
+            const statsHTML = `
+                <div class="stat-item">📊 <strong>Retrieved:</strong> ${data.stats.retrieved_count}</div>
+                <div class="stat-item">✅ <strong>Authorized:</strong> ${data.stats.authorized_count}</div>
+                <div class="stat-item">❌ <strong>Denied:</strong> ${data.stats.denied_count}</div>
+                <div class="stat-item">🔄 <strong>Attempts:</strong> ${data.stats.retrieval_attempts}</div>
+                <div class="stat-item">⏱️ <strong>Time:</strong> ${data.stats.execution_time_ms}ms</div>
+            `;
+            document.getElementById('stats').innerHTML = statsHTML;
+
+            // Authorized documents
+            const authorizedSection = document.getElementById('authorizedSection');
+            if (data.authorized_documents.length > 0) {
+                const authDocsHTML = data.authorized_documents.map(doc => `
+                    <div class="doc-card authorized">
+                        <div class="doc-card-header">
+                            <span class="doc-icon">✅</span>
+                            <span class="doc-title">${escapeHtml(doc.title)}</span>
+                            <span class="doc-id">${escapeHtml(doc.doc_id)}</span>
+                        </div>
+                        <div class="doc-content">${escapeHtml(doc.content_preview)}</div>
+                    </div>
+                `).join('');
+                authorizedSection.innerHTML = `
+                    <h3>Authorized Documents (${data.authorized_documents.length})</h3>
+                    ${authDocsHTML}
+                `;
+            } else {
+                authorizedSection.innerHTML = `
+                    <h3>Authorized Documents (0)</h3>
+                    <div class="empty-state">No authorized documents found</div>
+                `;
+            }
+
+            // Denied documents
+            const deniedSection = document.getElementById('deniedSection');
+            if (data.denied_documents.length > 0) {
+                const deniedDocsHTML = data.denied_documents.map(doc => `
+                    <div class="doc-card denied">
+                        <div class="doc-card-header">
+                            <span class="doc-icon">❌</span>
+                            <span class="doc-title">${escapeHtml(doc.title)}</span>
+                            <span class="doc-id">${escapeHtml(doc.doc_id)}</span>
+                        </div>
+                        <div class="doc-reason">🚫 ${escapeHtml(doc.reason)}</div>
+                    </div>
+                `).join('');
+                deniedSection.innerHTML = `
+                    <h3>Denied Documents (${data.denied_documents.length})</h3>
+                    ${deniedDocsHTML}
+                `;
+            } else {
+                deniedSection.innerHTML = `
+                    <h3>Denied Documents (0)</h3>
+                    <div class="empty-state">No documents were denied</div>
+                `;
+            }
+
+            // Answer
+            const answerSection = document.getElementById('answerSection');
+            answerSection.innerHTML = `
+                <h3>💬 Answer</h3>
+                <div class="answer-content">${escapeHtml(data.answer)}</div>
+            `;
+        }
+
+        // Display error
+        function displayError(message) {
+            document.getElementById('resultsCard').classList.add('hidden');
+            document.getElementById('errorCard').classList.remove('hidden');
+            document.getElementById('errorMessage').textContent = message;
+        }
+
+        // Escape HTML to prevent XSS
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Event listeners
+        document.getElementById('userSelect').addEventListener('change', updateDepartment);
+
+        document.getElementById('submitButton').addEventListener('click', submitQuery);
+
+        document.getElementById('queryInput').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && e.ctrlKey) {
+                submitQuery();
+            }
+        });
+
+        document.getElementById('exampleQueries').addEventListener('change', (e) => {
+            const index = e.target.selectedIndex - 1;
+            if (index >= 0) {
+                const example = EXAMPLE_QUERIES[index];
+                document.getElementById('queryInput').value = example.query;
+                document.getElementById('userSelect').value = example.user;
+                updateDepartment();
+                e.target.selectedIndex = 0; // Reset dropdown
+            }
+        });
+
+        // Initialize
+        loadUsers();
+
+        // Populate example queries dropdown
+        const exampleSelect = document.getElementById('exampleQueries');
+        EXAMPLE_QUERIES.forEach((ex, index) => {
+            const option = document.createElement('option');
+            const queryPreview = ex.query.length > 50 ? ex.query.substring(0, 50) + '...' : ex.query;
+            option.textContent = `${queryPreview} (${ex.user})`;
+            exampleSelect.appendChild(option);
+        });
+    </script>
+</body>
+</html>

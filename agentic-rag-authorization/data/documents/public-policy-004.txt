@@ -1,0 +1,16 @@
+Title: Company Policy - 004
+Department: public
+Classification: public
+Type: Company Policy
+
+Policy: General Policy 004
+
+Overview:
+This policy applies to all employees and outlines expectations
+
+Guidelines:
+- Treat others with respect
+- Communicate professionally
+- Follow company standards
+
+Contact: For questions, contact your manager or HR
