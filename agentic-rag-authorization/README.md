@@ -92,25 +92,18 @@ The agent transparently explains access limitations instead of failing silently.
 ### Steps
 
 ```bash
-# 1. Start services
+# 1. Configure
+cp .env.example .env
+# Edit .env with your actual OpenAI API key
+
+# 2. Start services
 docker-compose up -d
 
-# 2. Install dependencies
+# 3. Install dependencies
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
-
-# 3. Configure
-cp .env.example .env
-# Edit .env with your actual OpenAI API key (never commit .env!)
-
-# 4. Initialize data
-python3 examples/setup_environment.py
-
-# 5. Run demo
-python3 examples/basic_example.py
 ```
-
 
 ## Web UI
 
@@ -121,7 +114,7 @@ A web interface is available to demonstrate the authorization capabilities inter
 ```bash
 # 1. Ensure services are running and data is initialized
 docker-compose up -d
-python3 examples/setup_environment.py  # If not already done
+python3 examples/setup_environment.py
 
 # 2. Install web dependencies
 pip install -r requirements.txt  # Includes fastapi and uvicorn
@@ -130,11 +123,29 @@ pip install -r requirements.txt  # Includes fastapi and uvicorn
 python3 run_ui.py
 ```
 
-The launcher will:
-- ✅ Check that Weaviate, SpiceDB, and OpenAI are configured
-- ✅ Verify documents are loaded
-- 🚀 Start the FastAPI server
-- 🌐 Open your browser to http://localhost:8000
+The `setup-environment.py` file sets up Weaviate as the vector DB and SpiceDB with sample documents and department-based access control for the agentic RAG system. 
+
+We're creating a schema and writing relationships for a hierarchical permission model with users assigned to departments, department-wide document access, 3 cross-department collaboration grants, and 3 individual user exceptions.
+
+The UI launcher will:
+- Verify documents are loaded
+- Starts the FastAPI server
+- Open your browser to http://localhost:8000
+
+Here are few sample prompts you can run:
+
+Choose "Bob" from "Sales" as the user and the query as "What are the company handbook guidelines?"
+
+You should see: 
+📊 Retrieved: 5
+✅ Authorized: 3
+❌ Denied: 2
+
+Now run the same query as the "HR Manager". You should see:
+📊 Retrieved: 5
+✅ Authorized: 5
+❌ Denied: 0
+
 
 ### Manual Start
 
@@ -147,6 +158,16 @@ uvicorn api.main:app --reload --host 0.0.0.0 --port 8000
 
 # Browser
 open http://localhost:8000
+```
+
+## Run Without UI
+
+```
+# Initialize data
+python3 examples/setup_environment.py
+
+# Run demo
+python3 examples/basic_example.py
 ```
 
 ## How It Works
