@@ -1,0 +1,39 @@
+Title: Message Queue Architecture
+Department: engineering
+Classification: confidential
+Type: Technical Architecture
+
+Summary:
+This document describes the Data Pipeline architecture for our microservices architecture.
+
+Architecture Overview:
+This architecture emphasizes scalability, reliability, and maintainability through modular design.
+
+Microservices Patterns Used:
+- API Gateway Pattern: Centralized entry point for all client requests
+- Service Discovery: Dynamic service registration and lookup using Consul
+- Circuit Breaker: Prevents cascade failures using Hystrix pattern
+- Database per Service: Each microservice owns its data store
+
+Key Components:
+- Service Layer: RESTful APIs with OpenAPI specification
+- Data Layer: Event-driven data synchronization
+- API Layer: GraphQL and REST endpoints
+- Integration Layer: Message broker using RabbitMQ
+
+Technical Specifications:
+Language: Python 3.11, Java 17
+Framework: FastAPI, Spring Boot
+Database: PostgreSQL, MongoDB
+Cache: Redis with clustering
+Message Queue: RabbitMQ
+Service Mesh: Istio
+
+Implementation Guidelines:
+- Follow 12-factor app methodology
+- Implement comprehensive observability (metrics, logs, traces)
+- Use semantic versioning for APIs
+- Enforce contract testing between services
+- Apply defense in depth for security
+
+Related Documents: eng-guide-001, eng-spec-001

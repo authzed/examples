@@ -1,0 +1,18 @@
+Title: HR Announcement - 010
+Department: hr
+Classification: internal
+Type: HR Memo
+
+Date: 2024-03-10
+To: All Employees
+
+Subject: Important HR update
+
+Announcement:
+We are pleased to announce updates to company policies and benefits
+
+Details:
+Changes take effect next quarter
+New benefits include expanded coverage
+
+Action Required: Review changes and contact HR with questions

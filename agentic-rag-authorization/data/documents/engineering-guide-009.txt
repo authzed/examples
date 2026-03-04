@@ -1,0 +1,27 @@
+Title: API Design Guidelines Guide
+Department: engineering
+Classification: internal
+Type: Development Guide
+
+Introduction:
+This guide covers API Design Guidelines for engineering teams.
+
+Best Practices:
+- Write clear, documented code
+- Use version control effectively
+- Implement comprehensive tests
+
+Common Patterns:
+- Repository pattern
+- Factory pattern
+- Observer pattern
+
+Examples:
+See code samples in the engineering repository
+
+Troubleshooting:
+Check logs in /var/log/application
+Verify configuration settings
+Review recent deployments
+
+Related Documents: eng-architecture-001

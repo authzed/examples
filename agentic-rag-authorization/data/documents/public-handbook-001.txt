@@ -1,0 +1,19 @@
+Title: Company Handbook - Getting Started
+Department: public
+Classification: public
+Type: Company Handbook
+
+Section: Getting Started
+
+Introduction:
+Welcome! This handbook helps you understand our company culture and practices
+
+Content:
+Detailed information about company values, expectations, and resources
+
+Key Points:
+- We value integrity and transparency
+- We support growth and development
+- We foster collaboration
+
+Additional Resources: Company intranet, manager, HR team

@@ -1,0 +1,19 @@
+Title: Professional Development Employee Guide
+Department: hr
+Classification: internal
+Type: Employee Guide
+
+Topic: Professional Development
+
+Overview:
+This guide provides information to help you navigate company processes
+
+Employee Responsibilities:
+- Follow company policies
+- Complete required training
+- Communicate with manager
+
+Resources:
+HR portal, manager, employee handbook
+
+Contact Information: hr@company.com
