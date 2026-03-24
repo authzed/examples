@@ -194,7 +194,7 @@ definition document {
 
 ### 2. State Flow
 
-**Default Mode**
+**Default Mode (`max_attempts=1`)**
 ```
 User Query
     ↓
@@ -203,6 +203,40 @@ Retrieval Node ← Weaviate BM25 keyword search
 Authorization Node ← SpiceDB filters (SECURITY BOUNDARY - cannot be bypassed)
     ↓
 Generation Node ← Answer with authorized context + explanations
+```
+
+**Adaptive Mode (`max_attempts > 1`)**
+
+When `max_attempts` is set above 1, a reasoning node activates if authorization fails. The LLM analyzes why access was denied and decides whether a different retrieval strategy might find documents the user *can* access:
+
+```
+User Query
+    ↓
+Retrieval Node
+    ↓
+Authorization Node ← still deterministic, still non-bypassable
+    ↓
+ some docs authorized? → Yes → Generation Node
+    ↓ No
+Reasoning Node ← LLM decides: retry with different query, or give up?
+    ↓
+ attempts left? → Yes → Retrieval Node (loop)
+    ↓ No
+Generation Node ← explains the denial
+```
+
+For example, if Bob (sales) asks about "microservices architecture" and the first retrieval returns only engineering-only docs, the reasoning node might try a broader query that surfaces a shared architecture doc Bob can actually access.
+
+Enable it by setting `MAX_RETRIEVAL_ATTEMPTS` in `.env` (or passing `max_attempts` directly):
+
+```bash
+MAX_RETRIEVAL_ATTEMPTS=3  # default is 1
+```
+
+Or in code:
+
+```python
+result = run_agentic_rag(query="...", subject_id="bob", max_attempts=3)
 ```
 
 ### 3. Security Guarantees
