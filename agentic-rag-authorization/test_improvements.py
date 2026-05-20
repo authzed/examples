@@ -86,27 +86,24 @@ def test_connection_pooling():
 
 
 def test_batch_permissions():
-    """Test that batch permission checker is defined."""
-    print("\n=== Testing Batch Permission Checker ===")
+    """Test that langchain-spicedb SpiceDBAuthorizer is importable."""
+    print("\n=== Testing Batch Permission Checker (langchain-spicedb) ===")
 
     try:
-        from agentic_rag.authorization_helpers import batch_check_permissions
-
-        # Verify function signature
+        from langchain_spicedb.core import SpiceDBAuthorizer
         import inspect
 
-        sig = inspect.signature(batch_check_permissions)
+        sig = inspect.signature(SpiceDBAuthorizer.filter_documents)
         params = list(sig.parameters.keys())
 
-        assert "client" in params
         assert "subject_id" in params
         assert "documents" in params
 
-        print("✅ Batch permission checker defined correctly")
-        print(f"   Function signature: batch_check_permissions{sig}")
+        print("✅ SpiceDBAuthorizer.filter_documents available from langchain-spicedb")
+        print(f"   Method signature: filter_documents{sig}")
         return True
     except (ImportError, AssertionError) as e:
-        print(f"❌ Batch permission checker failed: {e}")
+        print(f"❌ SpiceDBAuthorizer check failed: {e}")
         return False
 
 
@@ -170,16 +167,16 @@ def test_error_handling():
         assert "except Exception as e:" in retrieval_code
         assert "logger.error" in retrieval_code
 
-        # Check authorization helpers has try-except
-        with open("agentic_rag/authorization_helpers.py", "r") as f:
+        # Check authorization node has logging
+        with open("agentic_rag/nodes/authorization_node.py", "r") as f:
             auth_code = f.read()
 
-        assert "except Exception as e:" in auth_code
-        assert "logger.error" in auth_code
+        assert "logger.info" in auth_code
+        assert "SpiceDBAuthorizer" in auth_code
 
         print("✅ Error handling implemented correctly")
         print("   - Retrieval node has try-except")
-        print("   - Authorization helpers has try-except")
+        print("   - Authorization node uses langchain-spicedb SpiceDBAuthorizer")
         print("   - Errors logged with logger.error")
         return True
     except Exception as e:

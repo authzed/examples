@@ -2,6 +2,7 @@
 langchain>=0.1.0
 langchain-openai>=0.1.0
 langgraph>=0.0.20
+langchain-spicedb @ git+https://github.com/authzed/langchain-spicedb.git@main
 weaviate-client>=3.26.0,<4.0  # v3 for REST API stability (no gRPC issues)
 authzed>=0.7.0
 python-dotenv>=1.0.0
