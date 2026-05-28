@@ -42,7 +42,7 @@ async def health_check():
     return {
         "status": "healthy",
         "services": {
-            "weaviate": "connected",
+            "milvus": "connected",
             "spicedb": "connected",
             "openai": "configured",
         },
