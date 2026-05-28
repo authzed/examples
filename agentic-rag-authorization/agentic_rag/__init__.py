@@ -1,4 +1,4 @@
-"""Agentic RAG with fine-grained authorization using Weaviate and SpiceDB."""
+"""Agentic RAG with fine-grained authorization using Milvus and SpiceDB."""
 
 __version__ = "0.1.0"
 
