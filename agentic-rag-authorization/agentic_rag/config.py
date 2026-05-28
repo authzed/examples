@@ -13,9 +13,9 @@ load_dotenv()
 class Config:
     """Configuration for agentic RAG system."""
 
-    # Weaviate
-    weaviate_url: str
-    weaviate_api_key: Optional[str]
+    # Milvus
+    milvus_uri: str
+    milvus_token: str
 
     # SpiceDB
     spicedb_endpoint: str
@@ -34,8 +34,8 @@ class Config:
     def from_env(cls):
         """Load configuration from environment variables."""
         return cls(
-            weaviate_url=os.getenv("WEAVIATE_URL", "http://localhost:8080"),
-            weaviate_api_key=os.getenv("WEAVIATE_API_KEY"),
+            milvus_uri=os.getenv("MILVUS_URI", "http://localhost:19530"),
+            milvus_token=os.getenv("MILVUS_TOKEN", ""),
             spicedb_endpoint=os.getenv("SPICEDB_ENDPOINT", "localhost:50051"),
             spicedb_token=os.getenv("SPICEDB_TOKEN", "devtoken"),
             openai_api_key=os.getenv("OPENAI_API_KEY", ""),
