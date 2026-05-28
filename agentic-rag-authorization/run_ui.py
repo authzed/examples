@@ -52,9 +52,13 @@ def check_services():
     # Check if documents are loaded
     try:
         if milvus_client.has_collection("Documents"):
-            stats = milvus_client.get_collection_stats("Documents")
-            row_count = int(stats.get("row_count", 0))
-            if row_count > 0:
+            results = milvus_client.query(
+                collection_name="Documents",
+                filter='doc_id != ""',
+                output_fields=["doc_id"],
+                limit=1,
+            )
+            if results:
                 print("  ✅ Documents loaded in Milvus")
             else:
                 print("  ⚠️  No documents found in Milvus")
