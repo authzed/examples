@@ -11,7 +11,7 @@ def test_get_milvus_client_returns_singleton():
         client1 = get_milvus_client("http://localhost:19530")
         client2 = get_milvus_client("http://localhost:19530")
     assert client1 is client2
-    mock_cls.assert_called_once_with(uri="http://localhost:19530")
+    mock_cls.assert_called_once_with(uri="http://localhost:19530", token="")
 
 
 def test_reset_clears_singleton():

@@ -29,12 +29,13 @@ def retrieval_node(state: AgenticRAGState) -> dict:
         {"query": state["query"], "subject_id": state["subject_id"]},
     ):
         try:
-            milvus_client = get_milvus_client(config.milvus_uri)
+            milvus_client = get_milvus_client(config.milvus_uri, config.milvus_token)
             query_embedding = _embed(state["query"], config.openai_api_key)
 
             results = milvus_client.search(
                 collection_name="Documents",
                 data=[query_embedding],
+                anns_field="embedding",
                 limit=5,
                 output_fields=["doc_id", "title", "content", "department", "classification"],
             )

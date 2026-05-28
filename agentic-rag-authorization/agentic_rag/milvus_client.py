@@ -8,14 +8,14 @@ _milvus_client: Optional[MilvusClient] = None
 _milvus_lock = Lock()
 
 
-def get_milvus_client(uri: str) -> MilvusClient:
+def get_milvus_client(uri: str, token: str = "") -> MilvusClient:
     """Get or create reusable MilvusClient (singleton, thread-safe)."""
     global _milvus_client
     if _milvus_client is not None:
         return _milvus_client
     with _milvus_lock:
         if _milvus_client is None:
-            _milvus_client = MilvusClient(uri=uri)
+            _milvus_client = MilvusClient(uri=uri, token=token)
     return _milvus_client
 
 

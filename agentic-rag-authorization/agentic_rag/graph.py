@@ -55,7 +55,7 @@ def build_agentic_rag_graph():
     """Build the agentic RAG graph with deterministic authorization.
 
     Simplified Flow:
-    1. Retrieval: Fetch documents from Weaviate
+    1. Retrieval: Fetch documents from Milvus
     2. Authorization: Deterministic permission check (security boundary)
     3. Conditional:
        - If authorized docs exist: Generate answer
