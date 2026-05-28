@@ -1,60 +1,55 @@
-"""Retrieval node - retrieve documents from Weaviate."""
+"""Retrieval node - retrieve documents from Milvus using semantic vector search."""
 
+import openai
 from langchain_core.messages import SystemMessage
 from langchain_core.documents import Document
 
 from ..state import AgenticRAGState
 from ..config import get_config
 from ..logging_config import get_logger
-from ..weaviate_client import get_weaviate_client
+from ..milvus_client import get_milvus_client
 from ..node_helpers import log_node_execution
 
 logger = get_logger("nodes.retrieval")
 
 
-def retrieval_node(state: AgenticRAGState) -> dict:
-    """Retrieve documents from Weaviate based on query.
+def _embed(text: str, api_key: str) -> list[float]:
+    client = openai.OpenAI(api_key=api_key)
+    response = client.embeddings.create(model="text-embedding-3-small", input=text)
+    return response.data[0].embedding
 
-    This node performs keyword search in Weaviate to find
-    relevant documents. Authorization happens in the next node.
-    """
+
+def retrieval_node(state: AgenticRAGState) -> dict:
+    """Retrieve documents from Milvus based on semantic similarity to the query."""
     config = get_config()
 
     with log_node_execution(
         logger,
         "retrieval",
-        {
-            "query": state["query"],
-            "subject_id": state["subject_id"],
-        }
+        {"query": state["query"], "subject_id": state["subject_id"]},
     ):
         try:
-            # Get or create Weaviate client (reused across requests)
-            weaviate_client = get_weaviate_client(config.weaviate_url)
+            milvus_client = get_milvus_client(config.milvus_uri)
+            query_embedding = _embed(state["query"], config.openai_api_key)
 
-            # Perform BM25 keyword search using v3 API
-            response = (
-                weaviate_client.query.get("Documents", ["doc_id", "title", "content", "department", "classification"])
-                .with_bm25(query=state["query"])
-                .with_limit(5)
-                .do()
+            results = milvus_client.search(
+                collection_name="Documents",
+                data=[query_embedding],
+                limit=5,
+                output_fields=["doc_id", "title", "content", "department", "classification"],
             )
 
-            # Extract results
-            results = response.get("data", {}).get("Get", {}).get("Documents", [])
-
-            # Convert to LangChain Documents
             documents = [
                 Document(
-                    page_content=result["content"],
+                    page_content=hit["entity"]["content"],
                     metadata={
-                        "doc_id": result["doc_id"],
-                        "title": result["title"],
-                        "department": result["department"],
-                        "classification": result["classification"],
+                        "doc_id": hit["entity"]["doc_id"],
+                        "title": hit["entity"]["title"],
+                        "department": hit["entity"]["department"],
+                        "classification": hit["entity"]["classification"],
                     },
                 )
-                for result in results
+                for hit in results[0]
             ]
 
             logger.info(
@@ -69,9 +64,7 @@ def retrieval_node(state: AgenticRAGState) -> dict:
                 "retrieved_documents": documents,
                 "retrieval_attempt": state["retrieval_attempt"] + 1,
                 "messages": [
-                    SystemMessage(
-                        content=f"Retrieved {len(documents)} documents from Weaviate"
-                    )
+                    SystemMessage(content=f"Retrieved {len(documents)} documents from Milvus")
                 ],
             }
 
@@ -85,8 +78,6 @@ def retrieval_node(state: AgenticRAGState) -> dict:
                 },
                 exc_info=True,
             )
-
-            # Fail gracefully - return empty results
             return {
                 "retrieved_documents": [],
                 "retrieval_attempt": state["retrieval_attempt"] + 1,
