@@ -1,9 +1,8 @@
 # Agentic RAG with Fine-Grained Authorization
 
+This repository demonstrates how to combine agentic behavior with deterministic fine-grained authorization using LangGraph, SpiceDB, and Milvus. You'll learn to build RAG systems where a user can only see information from the documents they have access to.
 
-This repository demonstrates how to combine agentic behavior with deterministic fine-grained authorization using LangGraph, SpiceDB, and Weaviate. You'll learn to build RAG systems where a user can view information only based on the documents they have access to.
-
-This project uses the [LangChain SpiceDB](https://pypi.org/project/langchain-spicedb/) library
+This project uses the [LangChain SpiceDB](https://pypi.org/project/langchain-spicedb/) library.
 
 ![screengrab](agentic-rag.gif)
 
@@ -17,10 +16,10 @@ This project uses the [LangChain SpiceDB](https://pypi.org/project/langchain-spi
 
 This repo demonstrates:
 
-1. **Fine-grained authorization in RAG** - How to enforce document-level permissions with SpiceDB to ensure the user only information based on what they have access to
-2. **Security architecture** - Deterministic authorization boundary that cannot be bypassed
+1. **Fine-grained authorization in RAG** - How to enforce document-level permissions with SpiceDB so users only see what they're allowed to see
+2. **Security architecture** - A deterministic authorization boundary that cannot be bypassed by the agent
 3. **Production features** - Structured logging, connection pooling, batch operations, error handling
-4. **Real-world complexity** - 50 documents, 4 permission patterns with hierarchies.
+4. **Real-world complexity** - 50 documents, 4 permission patterns with hierarchies
 
 Note: Despite the "agentic RAG" name, the default mode is intentionally simple and deterministic (3 nodes: retrieve → authorize → generate). This provides fast, predictable behavior suitable for most use cases.
 
@@ -31,14 +30,14 @@ Traditional RAG retrieves documents by semantic similarity without considering p
 1. **Security risk**: Users might see documents they shouldn't access
 2. **Poor UX**: Silent failures when documents are denied, with no explanation
 
-Read the [OWASP Top 10 for LLM](https://owasp.org/www-project-top-10-for-large-language-model-applications/) and [OWASP Top 10 Risks to Web Apps](https://owasp.org/Top10/2025/A01_2025-Broken_Access_Control/) for more information on why access control matters.
+Read the [OWASP Top 10 for LLM](https://owasp.org/www-project-top-10-for-large-language-model-applications/) and [OWASP Top 10 Risks to Web Apps](https://owasp.org/Top10/2025/A01_2025-Broken_Access_Control/) for more on why access control matters.
 
 ## The Solution
 
 This implementation shows how to combine:
-- **Retrieval-first approach**: Direct semantic/keyword search without upfront planning overhead
+- **Retrieval-first approach**: Semantic vector search without upfront planning overhead
 - **Deterministic security**: SpiceDB authorization that cannot be bypassed
-- **Transparency**: Users understand what they can/can't access and why
+- **Transparency**: Users understand what they can and can't access, and why
 
 ```
 Traditional RAG:  Query → Retrieve → Generate
@@ -123,29 +122,30 @@ pip install -r requirements.txt  # Includes fastapi and uvicorn
 python3 run_ui.py
 ```
 
-The `setup-environment.py` file sets up Weaviate as the vector DB and SpiceDB with sample documents and department-based access control for the agentic RAG system. 
-
-We're creating a schema and writing relationships for a hierarchical permission model with users assigned to departments, department-wide document access, 3 cross-department collaboration grants, and 3 individual user exceptions.
+The `setup_environment.py` script sets up Milvus as the vector database and SpiceDB with sample documents and department-based access control. It embeds all 50 documents using OpenAI's `text-embedding-3-small` and inserts them into Milvus, then writes a hierarchical permission model to SpiceDB: users assigned to departments, department-wide document access, 3 cross-department collaboration grants, and 3 individual user exceptions.
 
 The UI launcher will:
-- Verify documents are loaded
-- Starts the FastAPI server
+- Verify documents are loaded in Milvus
+- Start the FastAPI server
 - Open your browser to http://localhost:8000
 
-Here are few sample prompts you can run:
+Here are a few sample prompts to try:
 
-Choose "Bob" from "Sales" as the user and the query as "What are the company handbook guidelines?"
+Choose "Bob" from "Sales" as the user and run the query "What are the company handbook guidelines?"
 
-You should see: 
+You should see:
+```
 📊 Retrieved: 5
 ✅ Authorized: 3
 ❌ Denied: 2
+```
 
-Now run the same query as the "HR Manager". You should see:
+Now run the same query as "HR Manager":
+```
 📊 Retrieved: 5
 ✅ Authorized: 5
 ❌ Denied: 0
-
+```
 
 ### Manual Start
 
@@ -162,7 +162,7 @@ open http://localhost:8000
 
 ## Run Without UI
 
-```
+```bash
 # Initialize data
 python3 examples/setup_environment.py
 
@@ -182,8 +182,11 @@ definition department {
 }
 
 definition document {
+    relation owner: user
     relation viewer: user | department#member
-    permission view = viewer
+
+    permission view = viewer + owner
+    permission edit = owner
 }
 ```
 
@@ -198,7 +201,7 @@ definition document {
 ```
 User Query
     ↓
-Retrieval Node ← Weaviate BM25 keyword search
+Retrieval Node ← Milvus semantic vector search (text-embedding-3-small)
     ↓
 Authorization Node ← SpiceDB filters (SECURITY BOUNDARY - cannot be bypassed)
     ↓
@@ -225,7 +228,7 @@ Reasoning Node ← LLM decides: retry with different query, or give up?
 Generation Node ← explains the denial
 ```
 
-For example, if Bob (sales) asks about "microservices architecture" and the first retrieval returns only engineering-only docs, the reasoning node might try a broader query that surfaces a shared architecture doc Bob can actually access.
+For example, if Bob (sales) asks about "microservices architecture" and the first retrieval returns only engineering-restricted docs, the reasoning node might try a broader query that surfaces a shared architecture doc Bob can actually access.
 
 Enable it by setting `MAX_RETRIEVAL_ATTEMPTS` in `.env` (or passing `max_attempts` directly):
 
@@ -241,31 +244,30 @@ result = run_agentic_rag(query="...", subject_id="bob", max_attempts=3)
 
 ### 3. Security Guarantees
 
-- **Authorization always runs**: Hardcoded in LangGraph workflow, agent cannot skip
-- **Deterministic checks**: SpiceDB enforces permissions (no LLM involved)
+- **Authorization always runs**: Hardcoded in the LangGraph workflow — the agent cannot skip it
+- **Deterministic checks**: SpiceDB enforces permissions (no LLM involved in the decision)
 - **Fail closed**: Access denied unless explicitly granted
 - **Observable**: Full audit trail in state
 
 ## Project Structure
 
 ```
-agentic-rag-weaviate/
+agentic-rag-authorization/
 ├── agentic_rag/
 │   ├── graph.py               # LangGraph state machine
 │   ├── state.py               # State schema
 │   ├── config.py              # Configuration management
 │   ├── nodes/
-│   │   ├── retrieval_node.py  # Weaviate BM25 search
+│   │   ├── retrieval_node.py      # Milvus semantic vector search
 │   │   ├── authorization_node.py  # SpiceDB filtering (security boundary)
-│   │   ├── reasoning_node.py  # Optional: adaptive retry logic
-│   │   └── generation_node.py # Final answer with context
-│   ├── authorization_helpers.py  # Batch permission checking
-│   ├── weaviate_client.py     # Connection pooling for Weaviate
+│   │   ├── reasoning_node.py      # Optional: adaptive retry logic
+│   │   └── generation_node.py     # Final answer with context
+│   ├── milvus_client.py       # Connection pooling for Milvus
 │   ├── grpc_helpers.py        # Connection pooling for SpiceDB
 │   ├── logging_config.py      # Structured JSON logging
 │   └── validation.py          # Input validation and sanitization
 ├── examples/
-│   ├── setup_environment.py   # Initialize data (loads 50 documents)
+│   ├── setup_environment.py   # Initialize data (embeds and loads 50 documents)
 │   └── basic_example.py       # 8 demo scenarios
 ├── scripts/
 │   ├── generate_documents.py  # Generate 50 .txt files
@@ -275,7 +277,7 @@ agentic-rag-weaviate/
 │   ├── documents/             # 50 .txt files (5 departments)
 │   ├── schema.zed             # SpiceDB permission schema
 │   └── PERMISSIONS.md         # Permission matrix
-└── docker-compose.yml         # Weaviate + SpiceDB
+└── docker-compose.yml         # Milvus + SpiceDB
 ```
 
 ## Configuration
@@ -287,10 +289,11 @@ Environment variables (`.env`):
 OPENAI_API_KEY=sk-...
 
 # Optional (defaults shown)
-WEAVIATE_URL=http://localhost:8080
+MILVUS_URI=http://localhost:19530
+MILVUS_TOKEN=
 SPICEDB_ENDPOINT=localhost:50051
 SPICEDB_TOKEN=devtoken
-MAX_RETRIEVAL_ATTEMPTS=3
+MAX_RETRIEVAL_ATTEMPTS=1
 ```
 
 ## Dataset Overview
@@ -318,14 +321,6 @@ The `examples/basic_example.py` demonstrates 8 scenarios:
 7. **HR Department** - hr_manager queries HR policies
 8. **Transparent Explanations** - Agent explains why access was denied
 
-## Contributing & Extending
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for:
-- Development setup
-- Adding documents and permissions
-- Customizing agent behavior
-- Extending the system
-
 ## Testing
 
 ```bash
@@ -339,8 +334,9 @@ pytest tests/test_basic_flow.py::test_authorized_access
 ## Learn More
 
 - **SpiceDB**: https://authzed.com/docs
-- **Weaviate**: https://weaviate.io/developers/weaviate
+- **Milvus**: https://milvus.io/docs
 - **LangGraph**: https://langchain-ai.github.io/langgraph/
+- **langchain-spicedb**: https://github.com/authzed/langchain-spicedb
 
 ## License
 

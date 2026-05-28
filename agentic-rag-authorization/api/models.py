@@ -2,6 +2,7 @@
 
 from typing import List, Optional
 from pydantic import BaseModel, Field
+from agentic_rag.config import get_config
 
 
 class QueryRequest(BaseModel):
@@ -9,7 +10,7 @@ class QueryRequest(BaseModel):
 
     query: str = Field(..., min_length=1, max_length=1000)
     subject_id: str
-    max_attempts: int = Field(default=1, ge=1, le=5)
+    max_attempts: int = Field(default_factory=lambda: get_config().max_retrieval_attempts, ge=1, le=5)
 
 
 class DocumentSummary(BaseModel):
