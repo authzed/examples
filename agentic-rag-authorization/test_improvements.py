@@ -65,19 +65,19 @@ def test_connection_pooling():
             reset_spicedb_client,
             _spicedb_client,
         )
-        from agentic_rag.weaviate_client import (
-            get_weaviate_client,
-            reset_weaviate_client,
-            _weaviate_client,
+        from agentic_rag.milvus_client import (
+            get_milvus_client,
+            reset_milvus_client,
+            _milvus_client,
         )
 
         # Verify reset functions exist
         assert callable(reset_spicedb_client)
-        assert callable(reset_weaviate_client)
+        assert callable(reset_milvus_client)
 
         print("✅ Connection pooling functions defined correctly")
         print("   - get_spicedb_client() available")
-        print("   - get_weaviate_client() available")
+        print("   - get_milvus_client() available")
         print("   - reset_*_client() functions available")
         return True
     except (ImportError, AssertionError) as e:

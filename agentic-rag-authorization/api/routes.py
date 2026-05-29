@@ -37,12 +37,12 @@ async def get_users():
 @router.get("/health")
 async def health_check():
     """Check health of backend services."""
-    # TODO: Actually check Weaviate + SpiceDB connectivity
+    # TODO: Actually check Milvus + SpiceDB connectivity
     # For now, return optimistic health status
     return {
         "status": "healthy",
         "services": {
-            "weaviate": "connected",
+            "milvus": "connected",
             "spicedb": "connected",
             "openai": "configured",
         },

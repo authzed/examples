@@ -18,16 +18,16 @@ def check_services():
         print("     Copy .env.example to .env and configure it")
         return False
 
-    # Check Weaviate
+    # Check Milvus
     try:
         from agentic_rag.config import get_config
-        from agentic_rag.weaviate_client import get_weaviate_client
+        from agentic_rag.milvus_client import get_milvus_client
 
         config = get_config()
-        weaviate_client = get_weaviate_client(config.weaviate_url)
-        print("  ✅ Weaviate connected")
+        milvus_client = get_milvus_client(config.milvus_uri, config.milvus_token)
+        print("  ✅ Milvus connected")
     except Exception as e:
-        print(f"  ❌ Weaviate not available: {e}")
+        print(f"  ❌ Milvus not available: {e}")
         print("     Run: docker-compose up -d")
         return False
 
@@ -51,12 +51,21 @@ def check_services():
 
     # Check if documents are loaded
     try:
-        result = weaviate_client.query.get("Documents", ["doc_id"]).with_limit(1).do()
-        doc_count = len(result.get("data", {}).get("Get", {}).get("Documents", []))
-        if doc_count > 0:
-            print("  ✅ Documents loaded in Weaviate")
+        if milvus_client.has_collection("Documents"):
+            results = milvus_client.query(
+                collection_name="Documents",
+                filter='doc_id != ""',
+                output_fields=["doc_id"],
+                limit=1,
+            )
+            if results:
+                print("  ✅ Documents loaded in Milvus")
+            else:
+                print("  ⚠️  No documents found in Milvus")
+                print("     Run: python examples/setup_environment.py")
+                return False
         else:
-            print("  ⚠️  No documents found in Weaviate")
+            print("  ⚠️  Documents collection does not exist in Milvus")
             print("     Run: python examples/setup_environment.py")
             return False
     except Exception as e:

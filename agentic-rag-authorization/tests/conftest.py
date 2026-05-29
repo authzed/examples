@@ -1,16 +1,14 @@
 """Test fixtures for agentic RAG tests."""
 
 import pytest
-import weaviate
+from pymilvus import MilvusClient
 from agentic_rag.grpc_helpers import create_insecure_spicedb_client
 
 
 @pytest.fixture
-def weaviate_client():
-    """Create Weaviate client for tests."""
-    client = weaviate.connect_to_local()
-    yield client
-    client.close()
+def milvus_client():
+    """Create MilvusClient for tests."""
+    return MilvusClient(uri="http://localhost:19530")
 
 
 @pytest.fixture
