@@ -1,5 +1,6 @@
 # Agentic RAG with Fine-Grained Authorization
 
+> **Also available:** [Milvus version](https://github.com/authzed/examples/tree/milvus/agentic-rag-authorization) (semantic vector search with OpenAI embeddings)
 
 This repository demonstrates how to combine agentic behavior with deterministic fine-grained authorization using LangGraph, SpiceDB, and Weaviate. You'll learn to build RAG systems where a user can view information only based on the documents they have access to.
 
