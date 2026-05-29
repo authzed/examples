@@ -1,10 +1,23 @@
 # Agentic RAG with Fine-Grained Authorization
 
-This repository demonstrates how to combine agentic behavior with deterministic fine-grained authorization using LangGraph, SpiceDB, and Milvus. You'll learn to build RAG systems where a user can only see information from the documents they have access to.
+> **Also available:** [Weaviate version](https://github.com/authzed/examples/tree/weaviate/agentic-rag-authorization) (BM25 keyword search)
+
+This repository demonstrates how to combine agentic behavior with deterministic fine-grained authorization using LangGraph, SpiceDB, and [Milvus](https://github.com/milvus-io/milvus). You'll learn to build RAG systems where a user can only see information from the documents they have access to.
 
 This project uses the [LangChain SpiceDB](https://pypi.org/project/langchain-spicedb/) library.
 
 ![screengrab](agentic-rag.gif)
+
+
+## TL;DR (human-written)
+
+RAG systems typically focus on the retrieval mechanisms, but don't have fine-grained access control to check if the information retrieved is accessible to the user asking the query. This demo shows the setup for a prod-like Agentic RAG. It has a corpus of 50 documents with complex sharing requirements that span individual, departments and exceptions. 
+
+The two takeaways from this demo are:
+
+1. Using ReBAC makes it simple to model complex hierarchal permissions. The complexity increases in the context of RAG and AI Applications as there are 10x more principals, so traditional authorization methods such as RBAC fall flat.
+
+2. Never ever let an AI Agent *decide* if it needs to check for authorization. Gen AI is inherently probabilistic so you have to ensure that permission checks are deterministic and cannot be skipped.
 
 ## Documentation Navigation
 
@@ -21,7 +34,7 @@ This repo demonstrates:
 3. **Production features** - Structured logging, connection pooling, batch operations, error handling
 4. **Real-world complexity** - 50 documents, 4 permission patterns with hierarchies
 
-Note: Despite the "agentic RAG" name, the default mode is intentionally simple and deterministic (3 nodes: retrieve → authorize → generate). This provides fast, predictable behavior suitable for most use cases.
+Note: Despite the "agentic RAG" name, the default mode is intentionally simple and deterministic (3 nodes: retrieve → authorize → generate). This provides fast, predictable behavior suitable for most use cases. There is a `MAX_RETRIES` option where the AI Agent can reason if it has to retrieve more data.
 
 ## The Problem This Solves
 
