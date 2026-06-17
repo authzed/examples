@@ -68,5 +68,5 @@ validation:
   document:firstdoc#view:
     - "[user:tom] is <document:firstdoc#writer>"
     - "[user:fred] is <document:firstdoc#reader>"
-    - "[ai_agent:assistant_tom] is <document:firstdoc#writer>/<user:tom#agent>"
-    - "[ai_agent:assistant_fred] is <document:firstdoc#reader>/<user:fred#agent>"
+    - "[ai_agent:assistant_tom] is <user:tom#agent>"
+    - "[ai_agent:assistant_fred] is <user:fred#agent>"
