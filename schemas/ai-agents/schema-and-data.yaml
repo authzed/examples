@@ -1,0 +1,72 @@
+---
+schema: |-
+  /**
+   * an entity that can be granted permissions
+   */
+  definition user {
+      /**
+       * users can have one or more AI agents that act on their behalf
+       */
+      relation agent: ai_agent
+
+      /**
+       * the set of AI agents that may act on this user's behalf
+       */
+      permission delegates = agent
+  }
+
+  /**
+   * an AI agent that can act on behalf of a user
+   */
+  definition ai_agent {}
+
+  /**
+   * a resource that we are trying to protect
+   */
+  definition document {
+      /**
+       * users can be made writers of specific documents
+       */
+      relation writer: user
+
+      /**
+       * users can be made readers of specific documents
+       */
+      relation reader: user
+
+      /**
+       * if a user has the writer relationship to a specific document, they automatically get permission to edit it
+       */
+      permission edit = writer
+
+      /**
+       * a user can view a document if they are a reader (or can edit it).
+       * an AI agent can view a document if it acts on behalf of a reader or a writer of that document.
+       */
+      permission view = reader + edit + reader->delegates + writer->delegates
+  }
+
+relationships: |-
+  document:firstdoc#writer@user:tom
+  document:firstdoc#reader@user:fred
+  user:tom#agent@ai_agent:assistant_tom
+  user:fred#agent@ai_agent:assistant_fred
+
+assertions:
+  assertTrue:
+    - "document:firstdoc#edit@user:tom"
+    - "document:firstdoc#view@user:tom"
+    - "document:firstdoc#view@user:fred"
+    - "document:firstdoc#view@ai_agent:assistant_tom"
+    - "document:firstdoc#view@ai_agent:assistant_fred"
+  assertFalse:
+    - "document:firstdoc#edit@user:fred"
+    - "document:firstdoc#edit@ai_agent:assistant_tom"
+    - "document:firstdoc#edit@ai_agent:assistant_fred"
+
+validation:
+  document:firstdoc#view:
+    - "[user:tom] is <document:firstdoc#writer>"
+    - "[user:fred] is <document:firstdoc#reader>"
+    - "[ai_agent:assistant_tom] is <user:tom#agent>"
+    - "[ai_agent:assistant_fred] is <user:fred#agent>"
