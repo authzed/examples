@@ -8,6 +8,8 @@ Different organizations use different identity providers, but a single SpiceDB i
 
 ## Architecture
 
+![Many identity providers, one federated authorization: external accounts from swappable IdPs each bind to one internal user, and SpiceDB governs document access for internal users only](architecture.png)
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                    Enterprise AuthZ Layer                    │
