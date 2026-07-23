@@ -31,7 +31,7 @@ services:
       --http-enabled
     ports:
       - "50051:50051"  # gRPC
-      - "8090:8080"    # HTTP API (mapped to 8090 on host to avoid conflict with Keycloak)
+      - "8090:8443"    # HTTP API (SpiceDB serves REST on 8443; mapped to 8090 on host to avoid conflict with Keycloak)
     healthcheck:
       test: ["CMD", "grpc_health_probe", "-addr=:50051"]
       interval: "10s"
