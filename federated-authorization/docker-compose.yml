@@ -1,12 +1,13 @@
+---
 services:
   keycloak:
-    image: quay.io/keycloak/keycloak:24.0
-    command: start-dev --import-realm
+    image: "quay.io/keycloak/keycloak:24.0"
+    command: "start-dev --import-realm"
     environment:
-      KEYCLOAK_ADMIN: admin
-      KEYCLOAK_ADMIN_PASSWORD: admin
+      KEYCLOAK_ADMIN: "admin"
+      KEYCLOAK_ADMIN_PASSWORD: "admin"
     volumes:
-      - ./keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
+      - "./keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro"
     ports:
       - "8080:8080"
     # The Keycloak 24 image ships no curl/wget, so the healthcheck uses bash's
@@ -16,13 +17,13 @@ services:
       test:
         - "CMD-SHELL"
         - "exec 3<>/dev/tcp/localhost/8080 && printf 'GET /realms/org-a HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n' >&3 && grep -q '200 OK' <&3"
-      interval: 15s
-      timeout: 10s
+      interval: "15s"
+      timeout: "10s"
       retries: 10
-      start_period: 40s
+      start_period: "40s"
 
   spicedb:
-    image: authzed/spicedb:latest
+    image: "authzed/spicedb:latest"
     command: >
       serve
       --grpc-preshared-key=demo-token-do-not-use-in-prod
@@ -33,46 +34,46 @@ services:
       - "8090:8080"    # HTTP API (mapped to 8090 on host to avoid conflict with Keycloak)
     healthcheck:
       test: ["CMD", "grpc_health_probe", "-addr=:50051"]
-      interval: 10s
-      timeout: 5s
+      interval: "10s"
+      timeout: "5s"
       retries: 5
-      start_period: 10s
+      start_period: "10s"
 
   app:
-    build: .
+    build: "."
     ports:
       - "8000:8000"
     volumes:
-      - app-data:/data
+      - "app-data:/data"
     environment:
       # SpiceDB
-      SPICEDB_ENDPOINT: spicedb:50051
-      SPICEDB_PRESHARED_KEY: demo-token-do-not-use-in-prod
+      SPICEDB_ENDPOINT: "spicedb:50051"
+      SPICEDB_PRESHARED_KEY: "demo-token-do-not-use-in-prod"
       # Keycloak — two addresses are needed because of Docker networking:
       # KEYCLOAK_ISSUER is the container-network address used for server-to-server
       # calls (token exchange, JWKS fetch, userinfo).  Only the app container can
       # resolve 'keycloak'; the user's browser cannot.
-      KEYCLOAK_ISSUER: http://keycloak:8080/realms/org-a
+      KEYCLOAK_ISSUER: "http://keycloak:8080/realms/org-a"
       # KEYCLOAK_PUBLIC_ISSUER is the host-facing address used only to build the
       # browser redirect URL for the authorization endpoint.  'localhost:8080' is
       # what the host exposes, not reachable inside the app container by that name.
-      KEYCLOAK_PUBLIC_ISSUER: http://localhost:8080/realms/org-a
-      KEYCLOAK_CLIENT_ID: federated-authz-demo
-      KEYCLOAK_CLIENT_SECRET: federated-authz-demo-secret
+      KEYCLOAK_PUBLIC_ISSUER: "http://localhost:8080/realms/org-a"
+      KEYCLOAK_CLIENT_ID: "federated-authz-demo"
+      KEYCLOAK_CLIENT_SECRET: "federated-authz-demo-secret"
       # GitHub — must be supplied via .env or environment
-      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
-      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
+      GITHUB_CLIENT_ID: "${GITHUB_CLIENT_ID:-}"
+      GITHUB_CLIENT_SECRET: "${GITHUB_CLIENT_SECRET:-}"
       # App
-      SESSION_SECRET: ${SESSION_SECRET:-dev-session-secret-change-in-prod}
-      APP_BASE_URL: http://localhost:8000
-      DB_PATH: /data/app.db
-      DOCUMENTS_DIR: /data/documents
+      SESSION_SECRET: "${SESSION_SECRET:-dev-session-secret-change-in-prod}"
+      APP_BASE_URL: "http://localhost:8000"
+      DB_PATH: "/data/app.db"
+      DOCUMENTS_DIR: "/data/documents"
     depends_on:
       keycloak:
-        condition: service_healthy
+        condition: "service_healthy"
       spicedb:
-        condition: service_started
-    restart: on-failure
+        condition: "service_started"
+    restart: "on-failure"
 
 volumes:
   app-data:
