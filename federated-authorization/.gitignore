@@ -1,0 +1,12 @@
+.env
+__pycache__/
+*.py[cod]
+*.db
+*.sqlite
+data/documents/*
+!data/documents/.gitkeep
+*.egg-info/
+dist/
+build/
+.venv/
+venv/

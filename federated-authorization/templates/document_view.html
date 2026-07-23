@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}{{ doc.title }}{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h2>{{ doc.title }}</h2>
+    <a href="/" class="btn btn-outline">&larr; Dashboard</a>
+</div>
+
+<div class="doc-content-card">
+    <pre class="doc-content">{{ content }}</pre>
+</div>
+
+{% if can_edit %}
+<section class="section">
+    <h3>Edit Content</h3>
+    <form method="post" action="/documents/{{ doc.id }}/edit" class="doc-form">
+        <div class="form-group">
+            <textarea name="content" rows="12" class="form-control">{{ content }}</textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+    </form>
+</section>
+{% endif %}
+
+{% if can_share %}
+<section class="section">
+    <h3>Share This Document</h3>
+    <p class="hint">SpiceDB enforces sharing. Only you (the owner) can see this section.</p>
+
+    {% if sharees %}
+    <div class="sharees-list">
+        <h4>Current Access</h4>
+        <table class="table">
+            <thead>
+                <tr><th>User</th><th>Email</th><th>Provider</th><th>Permission</th><th></th></tr>
+            </thead>
+            <tbody>
+            {% for s in sharees %}
+            <tr>
+                <td>{{ s.display_name }}</td>
+                <td>{{ s.email }}</td>
+                <td>
+                    <span class="badge badge-{{ 'keycloak' if s.provider == 'keycloak' else 'github' }}">
+                        {{ s.provider }}
+                    </span>
+                </td>
+                <td><span class="badge badge-perm-{{ s.relation }}">{{ s.relation }}</span></td>
+                <td>
+                    <form method="post" action="/documents/{{ doc.id }}/unshare" style="display:inline">
+                        <input type="hidden" name="target_user_id" value="{{ s.user_id }}">
+                        <input type="hidden" name="relation" value="{{ s.relation }}">
+                        <button type="submit" class="btn btn-sm btn-danger">Revoke</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    {% if all_users %}
+    <div class="share-form">
+        <h4>Grant Access</h4>
+        <form method="post" action="/documents/{{ doc.id }}/share" class="share-row">
+            <select name="target_user_id" class="form-control select-inline" required>
+                <option value="">Select a user...</option>
+                {% for u in all_users %}
+                <option value="{{ u.id }}">{{ u.display_name }} ({{ u.email }} &mdash; {{ u.provider }})</option>
+                {% endfor %}
+            </select>
+            <select name="permission_level" class="form-control select-inline">
+                <option value="viewer">Viewer (read-only)</option>
+                <option value="editor">Editor (read + write)</option>
+            </select>
+            <button type="submit" class="btn btn-primary">Share</button>
+        </form>
+        <p class="hint">
+            Writes <code>document:{{ doc.id[:8] }}...#&lt;permission&gt;@user:&lt;target-uuid&gt;</code> to SpiceDB.
+            The target user can be from a completely different IdP.
+        </p>
+    </div>
+    {% elif not sharees %}
+    <p class="hint">No other users have logged in yet. Ask your colleague to sign in first, then share with them here.</p>
+    {% endif %}
+</section>
+{% endif %}
+
+<div class="doc-meta-footer">
+    <small>
+        Document ID: <code>{{ doc.id }}</code> &nbsp;|&nbsp;
+        Created: {{ doc.created_at[:19] }} &nbsp;|&nbsp;
+        Your permissions:
+        {% if can_share %}<span class="badge badge-perm-owner">owner</span>{% endif %}
+        {% if can_edit and not can_share %}<span class="badge badge-perm-editor">editor</span>{% endif %}
+        {% if not can_edit %}<span class="badge badge-perm-viewer">viewer</span>{% endif %}
+    </small>
+</div>
+{% endblock %}
