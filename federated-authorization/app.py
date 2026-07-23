@@ -659,11 +659,28 @@ async def view_document(request: Request, doc_id: str):
     })
 
 
+def _safe_doc_id(doc_id: str) -> str:
+    """Return the canonical form of a document id, or 404 on anything invalid.
+
+    Document ids are always generated with ``uuid.uuid4()`` (see
+    ``create_document``), so a value that isn't a UUID can only be a bad or
+    malicious request. Normalizing through ``uuid.UUID`` also guarantees the id
+    is safe to interpolate into a redirect ``Location``: it can contain only hex
+    digits and hyphens, so it cannot break out of the ``/documents/`` path.
+    """
+    try:
+        return str(uuid.UUID(doc_id))
+    except ValueError:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+
 @app.post("/documents/{doc_id}/edit")
 async def edit_document(request: Request, doc_id: str, content: str = Form(...)):
     user = current_user(request)
     if not user:
         return RedirectResponse("/", status_code=302)
+
+    doc_id = _safe_doc_id(doc_id)
 
     client = get_spicedb()
     if not check_permission(client, "document", doc_id, "edit", user["id"],
@@ -692,6 +709,8 @@ async def share_document(
     user = current_user(request)
     if not user:
         return RedirectResponse("/", status_code=302)
+
+    doc_id = _safe_doc_id(doc_id)
 
     client = get_spicedb()
     if not check_permission(client, "document", doc_id, "share", user["id"],
@@ -723,6 +742,8 @@ async def unshare_document(
     user = current_user(request)
     if not user:
         return RedirectResponse("/", status_code=302)
+
+    doc_id = _safe_doc_id(doc_id)
 
     client = get_spicedb()
     if not check_permission(client, "document", doc_id, "share", user["id"],
