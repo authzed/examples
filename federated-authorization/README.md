@@ -10,30 +10,6 @@ Different organizations use different identity providers, but a single SpiceDB i
 
 ![Many identity providers, one federated authorization: the app resolves each login from a swappable IdP to an internal user via a bound_to lookup in SpiceDB, which stores the identity bindings and governs document access for internal users only](architecture.png)
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    Enterprise AuthZ Layer                    │
-│                                                             │
-│  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐  │
-│  │   Keycloak   │    │   GitHub     │    │   SpiceDB    │  │
-│  │   (Org A)    │    │   OAuth      │    │  (AuthZ)     │  │
-│  │              │    │   (Org B)    │    │              │  │
-│  │  alice       │    │  bob (any    │    │  Relationships│  │
-│  │  carol       │    │  GH account) │    │  + Schema    │  │
-│  └──────┬───────┘    └──────┬───────┘    └──────┬───────┘  │
-│         │                   │                   │          │
-│         └──────────┬────────┘                   │          │
-│                    │                            │          │
-│              ┌─────▼────────────────────────────▼──────┐   │
-│              │           FastAPI App (Python)           │   │
-│              │                                         │   │
-│              │  1. OAuth/OIDC callback → extract sub   │   │
-│              │  2. Resolve/create internal user UUID   │   │
-│              │  3. All authz checks → SpiceDB only     │   │
-│              └─────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────┘
-```
-
 ### The Federated Identity Pattern
 
 **Key insight**: Every IdP gets its own SpiceDB object type, bound to a canonical internal `user` object. Document permissions are always granted to `user:<uuid>`, never to raw IdP subjects. This means a Keycloak user and a GitHub user can share resources without either IdP knowing about the other.
