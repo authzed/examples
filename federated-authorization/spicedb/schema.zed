@@ -1,0 +1,19 @@
+definition user {}
+
+definition keycloak_account {
+    relation bound_to: user
+}
+
+definition github_account {
+    relation bound_to: user
+}
+
+definition document {
+    relation owner: user
+    relation editor: user
+    relation viewer: user
+
+    permission edit = editor + owner
+    permission view = viewer + edit
+    permission share = owner
+}
