@@ -35,7 +35,7 @@ Technical details for those implementing similar systems or extending this one.
 │                       │                                │
 │            ┌──────────┼──────────┐                     │
 │            ▼          ▼          ▼                     │
-│        Weaviate    SpiceDB    OpenAI                   │
+│        Weaviate    SpiceDB    Mistral                  │
 │        (Search)    (AuthZ)    (LLM)                    │
 └─────────────────────────────────────────────────────────┘
 ```
@@ -109,7 +109,7 @@ python3 run_ui.py
 This launcher performs pre-flight checks:
 - Verifies Weaviate connectivity
 - Verifies SpiceDB connectivity
-- Checks OpenAI API key configuration
+- Checks Mistral API key configuration
 - Validates documents are loaded
 - Auto-opens browser to http://localhost:8000
 
@@ -461,7 +461,7 @@ The API layer is designed for **demonstration and education**, not production us
 
 4. **No Rate Limiting**
    - No protection against abuse or DoS
-   - OpenAI API costs could accumulate
+   - Mistral API costs could accumulate
 
 **Why This Is Acceptable for Demo:**
 - System demonstrates authorization concepts (SpiceDB)
@@ -581,7 +581,7 @@ async def run_agentic_rag_async(query: str, subject_id: str, max_attempts: int) 
 
 1. **Concurrency**
    - Server can handle multiple queries simultaneously
-   - Other requests aren't blocked while one query waits for OpenAI
+   - Other requests aren't blocked while one query waits for Mistral
 
 2. **Resource Efficiency**
    - Async I/O doesn't waste threads on waiting
@@ -629,7 +629,7 @@ async def run_agentic_rag_async(query, subject_id, max_attempts):
 **Node Compatibility:**
 
 All nodes work with both sync and async execution:
-- LangChain components support async (Weaviate client, OpenAI)
+- LangChain components support async (Weaviate client, Mistral)
 - SpiceDB gRPC client is synchronous but fast (~40-50ms)
 - No code duplication required
 
@@ -1322,10 +1322,10 @@ Async execution allows concurrent query handling:
 
 - **Single query**: ~3.5-4.5s
 - **5 concurrent queries**: ~4-5s each (minimal overhead)
-- **10 concurrent queries**: ~5-6s each (slight queueing at OpenAI)
+- **10 concurrent queries**: ~5-6s each (slight queueing at Mistral)
 
 **Bottlenecks:**
-1. OpenAI API calls (~2-3s) - most significant
+1. Mistral API calls (~2-3s) - most significant
 2. Weaviate search (~0.5-1s)
 3. SpiceDB checks (~40-50ms for 3-5 documents)
 4. API/network overhead (~30-50ms total)
@@ -1525,7 +1525,7 @@ For production deployment, consider tracking:
    - API response time (p50, p95, p99)
    - LangGraph execution time
    - Individual node execution times
-   - OpenAI API latency
+   - Mistral API latency
 
 2. **Authorization Metrics:**
    - Authorization pass rate (per user)
@@ -1542,7 +1542,7 @@ For production deployment, consider tracking:
 4. **Error Metrics:**
    - API error rate
    - Validation failures
-   - OpenAI API errors
+   - Mistral API errors
    - Service connectivity failures (Weaviate, SpiceDB)
 
 ## Summary

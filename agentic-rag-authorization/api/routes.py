@@ -44,7 +44,7 @@ async def health_check():
         "services": {
             "milvus": "connected",
             "spicedb": "connected",
-            "openai": "configured",
+            "mistral": "configured",
         },
     }
 

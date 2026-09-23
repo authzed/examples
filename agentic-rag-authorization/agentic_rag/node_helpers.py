@@ -3,22 +3,22 @@
 import time
 from contextlib import contextmanager
 from typing import Dict, Any
-from langchain_openai import ChatOpenAI
+from langchain_mistralai import ChatMistralAI
 
 from .config import get_config
 
 
-def get_llm() -> ChatOpenAI:
+def get_llm() -> ChatMistralAI:
     """Get configured LLM instance.
 
     Returns:
-        ChatOpenAI: Configured LLM with gpt-4 and temperature=0
+        ChatMistralAI: Configured LLM with mistral-small-latest and temperature=0
     """
     config = get_config()
-    return ChatOpenAI(
-        model="gpt-4",
+    return ChatMistralAI(
+        model="mistral-small-latest",
         temperature=0,
-        api_key=config.openai_api_key
+        api_key=config.mistral_api_key
     )
 
 

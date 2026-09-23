@@ -8,7 +8,7 @@ from agentic_rag.config import Config
 def test_config_loads_milvus_uri():
     env = {
         "MILVUS_URI": "http://milvus-host:19530",
-        "OPENAI_API_KEY": "sk-test",
+        "MISTRAL_API_KEY": "test-key",
         "SPICEDB_TOKEN": "tok",
         "SPICEDB_ENDPOINT": "localhost:50051",
     }
@@ -19,7 +19,7 @@ def test_config_loads_milvus_uri():
 
 def test_config_milvus_defaults():
     env = {
-        "OPENAI_API_KEY": "sk-test",
+        "MISTRAL_API_KEY": "test-key",
         "SPICEDB_TOKEN": "tok",
         "SPICEDB_ENDPOINT": "localhost:50051",
     }

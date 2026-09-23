@@ -42,12 +42,12 @@ def check_services():
         print("     Run: docker-compose up -d")
         return False
 
-    # Check OpenAI key
-    if not config.openai_api_key or config.openai_api_key == "your-openai-api-key-here":
-        print("  ❌ OPENAI_API_KEY not configured")
+    # Check Mistral key
+    if not config.mistral_api_key or config.mistral_api_key == "your-mistral-api-key-here":
+        print("  ❌ MISTRAL_API_KEY not configured")
         print("     Set it in .env file")
         return False
-    print("  ✅ OpenAI API key configured")
+    print("  ✅ Mistral API key configured")
 
     # Check if documents are loaded
     try:

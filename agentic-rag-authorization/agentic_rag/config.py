@@ -20,8 +20,8 @@ class Config:
     spicedb_endpoint: str
     spicedb_token: str
 
-    # OpenAI
-    openai_api_key: str
+    # Mistral
+    mistral_api_key: str
 
     # Agent behavior
     max_retrieval_attempts: int = 1
@@ -37,7 +37,7 @@ class Config:
             milvus_token=os.getenv("MILVUS_TOKEN", ""),
             spicedb_endpoint=os.getenv("SPICEDB_ENDPOINT", "localhost:50051"),
             spicedb_token=os.getenv("SPICEDB_TOKEN", "devtoken"),
-            openai_api_key=os.getenv("OPENAI_API_KEY", ""),
+            mistral_api_key=os.getenv("MISTRAL_API_KEY", ""),
             max_retrieval_attempts=int(os.getenv("MAX_RETRIEVAL_ATTEMPTS", "1")),
             log_level=os.getenv("LOG_LEVEL", "INFO"),
         )

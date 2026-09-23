@@ -1,6 +1,6 @@
 """Retrieval node - retrieve documents from Milvus using semantic vector search."""
 
-import openai
+from langchain_mistralai import MistralAIEmbeddings
 from langchain_core.messages import SystemMessage
 from langchain_core.documents import Document
 
@@ -14,9 +14,8 @@ logger = get_logger("nodes.retrieval")
 
 
 def _embed(text: str, api_key: str) -> list[float]:
-    client = openai.OpenAI(api_key=api_key)
-    response = client.embeddings.create(model="text-embedding-3-small", input=text)
-    return response.data[0].embedding
+    embeddings = MistralAIEmbeddings(model="mistral-embed", api_key=api_key)
+    return embeddings.embed_query(text)
 
 
 def retrieval_node(state: AgenticRAGState) -> dict:
@@ -30,7 +29,7 @@ def retrieval_node(state: AgenticRAGState) -> dict:
     ):
         try:
             milvus_client = get_milvus_client(config.milvus_uri, config.milvus_token)
-            query_embedding = _embed(state["query"], config.openai_api_key)
+            query_embedding = _embed(state["query"], config.mistral_api_key)
 
             results = milvus_client.search(
                 collection_name="Documents",

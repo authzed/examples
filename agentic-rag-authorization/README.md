@@ -99,14 +99,14 @@ The agent transparently explains access limitations instead of failing silently.
 ### Prerequisites
 - Docker & Docker Compose
 - Python 3.11+
-- OpenAI API key
+- Mistral API key
 
 ### Steps
 
 ```bash
 # 1. Configure
 cp .env.example .env
-# Edit .env with your actual OpenAI API key
+# Edit .env with your actual Mistral API key
 
 # 2. Start services
 docker-compose up -d
@@ -135,7 +135,7 @@ pip install -r requirements.txt  # Includes fastapi and uvicorn
 python3 run_ui.py
 ```
 
-The `setup_environment.py` script sets up Milvus as the vector database and SpiceDB with sample documents and department-based access control. It embeds all 50 documents using OpenAI's `text-embedding-3-small` and inserts them into Milvus, then writes a hierarchical permission model to SpiceDB: users assigned to departments, department-wide document access, 3 cross-department collaboration grants, and 3 individual user exceptions.
+The `setup_environment.py` script sets up Milvus as the vector database and SpiceDB with sample documents and department-based access control. It embeds all 50 documents using Mistral's `mistral-embed` and inserts them into Milvus, then writes a hierarchical permission model to SpiceDB: users assigned to departments, department-wide document access, 3 cross-department collaboration grants, and 3 individual user exceptions.
 
 The UI launcher will:
 - Verify documents are loaded in Milvus
@@ -214,7 +214,7 @@ definition document {
 ```
 User Query
     ↓
-Retrieval Node ← Milvus semantic vector search (text-embedding-3-small)
+Retrieval Node ← Milvus semantic vector search (mistral-embed)
     ↓
 Authorization Node ← SpiceDB filters (SECURITY BOUNDARY - cannot be bypassed)
     ↓
@@ -299,7 +299,7 @@ Environment variables (`.env`):
 
 ```bash
 # Required
-OPENAI_API_KEY=sk-...
+MISTRAL_API_KEY=...
 
 # Optional (defaults shown)
 MILVUS_URI=http://localhost:19530

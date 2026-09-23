@@ -103,7 +103,7 @@ def setup_logging(level: str = "INFO") -> None:
     # Reduce noise from third-party libraries
     logging.getLogger("httpx").setLevel(logging.WARNING)
     logging.getLogger("httpcore").setLevel(logging.WARNING)
-    logging.getLogger("openai").setLevel(logging.WARNING)
+    logging.getLogger("mistralai").setLevel(logging.WARNING)
     logging.getLogger("pymilvus").setLevel(logging.WARNING)
     logging.getLogger("grpc").setLevel(logging.WARNING)
 

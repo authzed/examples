@@ -8,7 +8,7 @@ load_dotenv()
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-import openai
+from langchain_mistralai import MistralAIEmbeddings
 from pymilvus import MilvusClient, DataType
 from authzed.api.v1 import (
     WriteSchemaRequest,
@@ -171,14 +171,14 @@ def setup_spicedb():
 
 
 def setup_milvus():
-    """Setup Milvus with sample documents using OpenAI semantic embeddings."""
+    """Setup Milvus with sample documents using Mistral semantic embeddings."""
     print("\nSetting up Milvus...")
 
     milvus_uri = os.getenv("MILVUS_URI", "http://localhost:19530")
-    openai_api_key = os.getenv("OPENAI_API_KEY", "")
+    mistral_api_key = os.getenv("MISTRAL_API_KEY", "")
 
     client = MilvusClient(uri=milvus_uri)
-    oai_client = openai.OpenAI(api_key=openai_api_key)
+    embeddings = MistralAIEmbeddings(model="mistral-embed", api_key=mistral_api_key)
 
     if client.has_collection("Documents"):
         client.drop_collection("Documents")
@@ -190,7 +190,7 @@ def setup_milvus():
     schema.add_field("content", DataType.VARCHAR, max_length=65535)
     schema.add_field("department", DataType.VARCHAR, max_length=128)
     schema.add_field("classification", DataType.VARCHAR, max_length=128)
-    schema.add_field("embedding", DataType.FLOAT_VECTOR, dim=1536)
+    schema.add_field("embedding", DataType.FLOAT_VECTOR, dim=1024)
 
     index_params = client.prepare_index_params()
     index_params.add_index(
@@ -208,17 +208,14 @@ def setup_milvus():
 
     rows = []
     for i, doc in enumerate(documents):
-        response = oai_client.embeddings.create(
-            model="text-embedding-3-small",
-            input=doc["content"],
-        )
+        embedding = embeddings.embed_query(doc["content"])
         rows.append({
             "doc_id": doc["doc_id"],
             "title": doc["title"],
             "content": doc["content"],
             "department": doc["department"],
             "classification": doc["classification"],
-            "embedding": response.data[0].embedding,
+            "embedding": embedding,
         })
         if (i + 1) % 10 == 0:
             print(f"  Embedded {i + 1}/{len(documents)} documents...")
