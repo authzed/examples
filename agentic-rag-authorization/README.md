@@ -1,6 +1,6 @@
 # Agentic RAG with Fine-Grained Authorization
 
-> **Also available:** [Weaviate version](https://github.com/authzed/examples/tree/weaviate/agentic-rag-authorization) (BM25 keyword search)
+> **Also available:** [Weaviate version](https://github.com/authzed/examples/tree/weaviate/agentic-rag-authorization) (BM25 keyword search) · [Mistral version](https://github.com/authzed/examples/tree/mistral/agentic-rag-authorization) (Mistral embeddings and LLM)
 
 This repository demonstrates how to combine agentic behavior with deterministic fine-grained authorization using LangGraph, SpiceDB, and [Milvus](https://github.com/milvus-io/milvus). You'll learn to build RAG systems where a user can only see information from the documents they have access to.
 
