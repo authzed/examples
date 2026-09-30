@@ -22,13 +22,52 @@ services:
       retries: 10
       start_period: "40s"
 
+  # Persistent datastore for SpiceDB. Backing SpiceDB with Postgres (instead of
+  # the in-memory engine) is what lets relationships — IdP bindings and document
+  # grants alike — survive a restart of the stack.
+  postgres:
+    image: "postgres:16-alpine"
+    # track_commit_timestamp=on is SpiceDB's recommended Postgres setting; it
+    # enables the Watch API and silences a startup warning from SpiceDB.
+    command: ["postgres", "-c", "track_commit_timestamp=on"]
+    environment:
+      POSTGRES_USER: "spicedb"
+      POSTGRES_PASSWORD: "spicedb"
+      POSTGRES_DB: "spicedb"
+    volumes:
+      - "postgres-data:/var/lib/postgresql/data"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U spicedb -d spicedb"]
+      interval: "5s"
+      timeout: "5s"
+      retries: 10
+      start_period: "10s"
+
+  # One-shot: create/upgrade SpiceDB's Postgres schema, then exit. 'spicedb
+  # serve' waits for this to complete (service_completed_successfully) so it
+  # never starts against an unmigrated database.
+  spicedb-migrate:
+    image: "authzed/spicedb:latest"
+    command: >
+      datastore migrate head
+      --datastore-engine=postgres
+      --datastore-conn-uri=postgres://spicedb:spicedb@postgres:5432/spicedb?sslmode=disable
+    depends_on:
+      postgres:
+        condition: "service_healthy"
+    restart: "on-failure"
+
   spicedb:
     image: "authzed/spicedb:latest"
     command: >
       serve
       --grpc-preshared-key=demo-token-do-not-use-in-prod
-      --datastore-engine=memory
+      --datastore-engine=postgres
+      --datastore-conn-uri=postgres://spicedb:spicedb@postgres:5432/spicedb?sslmode=disable
       --http-enabled
+    depends_on:
+      spicedb-migrate:
+        condition: "service_completed_successfully"
     ports:
       - "50051:50051"  # gRPC
       - "8090:8443"    # HTTP API (SpiceDB serves REST on 8443; mapped to 8090 on host to avoid conflict with Keycloak)
@@ -72,8 +111,9 @@ services:
       keycloak:
         condition: "service_healthy"
       spicedb:
-        condition: "service_started"
+        condition: "service_healthy"
     restart: "on-failure"
 
 volumes:
   app-data:
+  postgres-data:

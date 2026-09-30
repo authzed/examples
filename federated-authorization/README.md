@@ -44,6 +44,14 @@ definition document {
 }
 ```
 
+### Persistence
+
+SpiceDB is backed by **PostgreSQL** (`--datastore-engine=postgres`), so every relationship — the IdP→user bindings *and* the document grants — survives a restart of the stack. A one-shot `spicedb migrate head` service initializes the Postgres schema before SpiceDB starts serving.
+
+This matters: with SpiceDB's in-memory engine, a restart wipes every binding while the app's own database persists, so returning users get minted a fresh `user:<uuid>` — duplicate users, and documents that silently lose their grants. Persisting SpiceDB fixes both at the source. The app's SQLite database holds only user *profiles* (for display) and document *metadata*; SpiceDB remains the single source of truth for identity bindings and authorization.
+
+For a real deployment you would still harden the parts kept deliberately simple here: TLS on the SpiceDB gRPC channel, real secrets instead of the demo preshared key and Postgres password, and a managed/replicated Postgres.
+
 ---
 
 ## Prerequisites
@@ -109,6 +117,11 @@ Wait for all services to be healthy. Keycloak takes ~60 seconds to start the fir
 - **App**: http://localhost:8000
 - **Keycloak Admin**: http://localhost:8080 (admin / admin)
 - **SpiceDB HTTP**: http://localhost:8090
+
+The stack also runs **PostgreSQL** (SpiceDB's datastore) and a one-shot **migrate** step that
+initializes its schema. Because SpiceDB persists to Postgres, your users, documents, and shares
+survive `docker compose restart` and `docker compose down` / `up`. Run `docker compose down -v`
+when you want a clean slate.
 
 ---
 
@@ -197,7 +210,7 @@ Alice can click **Revoke** next to Bob's entry. Bob's document disappears from h
 | Operation | SpiceDB API | Used for |
 |-----------|-------------|----------|
 | First login (new user) | `WriteRelationships` | Record IdP→user binding |
-| Login (returning user) | `ReadRelationships` | Look up existing binding |
+| Login (returning user) | `LookupSubjects` | Resolve the IdP account's internal user |
 | Dashboard load | `LookupResources` | Find all viewable docs |
 | Document open | `CheckPermission(view)` | Gate document access |
 | Edit form display | `CheckPermission(edit)` | Show/hide edit UI |
