@@ -10,6 +10,7 @@ import json
 import sqlite3
 from pathlib import Path
 from datetime import datetime
+from urllib.parse import urlencode
 from contextlib import asynccontextmanager
 from typing import Optional
 
@@ -463,6 +464,13 @@ async def keycloak_callback(request: Request):
         "display_name": display_name,
         "provider": "Keycloak (Org A)",
     }
+    # Keep the id_token so /auth/logout can end the Keycloak SSO session via a
+    # front-channel RP-initiated logout (id_token_hint).  Without ending that
+    # session, clearing our own cookie leaves Keycloak's browser SSO session
+    # alive and the next "Log in with Keycloak" silently re-authenticates with
+    # no password prompt — so logout appears to do nothing.
+    if token.get("id_token"):
+        request.session["keycloak_id_token"] = token["id_token"]
     return RedirectResponse("/", status_code=302)
 
 
@@ -536,7 +544,33 @@ async def github_callback(request: Request):
 # ---------------------------------------------------------------------------
 @app.get("/auth/logout")
 async def logout(request: Request):
+    # Clearing our own session cookie only logs the user out of THIS app.  For a
+    # Keycloak user we must also end the upstream SSO session, otherwise the
+    # browser's Keycloak cookie survives and the next login silently
+    # re-authenticates — making it look like logout did nothing.
+    #
+    # This uses an OIDC front-channel (RP-initiated) logout: the browser is
+    # redirected to Keycloak's end-session endpoint on the *public* issuer
+    # (KEYCLOAK_PUBLIC_ISSUER), which the browser can reach and whose host
+    # matches the id_token's issuer.  A server-side back-channel call cannot work
+    # here — the app can only reach Keycloak at the internal address
+    # (keycloak:8080), and Keycloak rejects a token issued for the public
+    # address.  Keycloak ends the session and redirects the browser back to
+    # post_logout_redirect_uri (registered on the client in the realm).
+    #
+    # GitHub has no equivalent: a third-party app cannot (and should not) end a
+    # user's github.com session, so clearing our session is the complete logout.
+    id_token = request.session.get("keycloak_id_token")
     request.session.clear()
+    if id_token:
+        params = urlencode({
+            "id_token_hint": id_token,
+            "post_logout_redirect_uri": f"{APP_BASE_URL}/",
+        })
+        return RedirectResponse(
+            f"{KEYCLOAK_PUBLIC_ISSUER}/protocol/openid-connect/logout?{params}",
+            status_code=302,
+        )
     return RedirectResponse("/", status_code=302)
 
 

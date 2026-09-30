@@ -29,6 +29,9 @@
         "http://localhost:8000",
         "http://app:8000"
       ],
+      "attributes": {
+        "post.logout.redirect.uris": "http://localhost:8000/*##http://app:8000/*"
+      },
       "fullScopeAllowed": true,
       "defaultClientScopes": [
         "web-origins",
