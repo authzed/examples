@@ -192,57 +192,20 @@ Alice can click **Revoke** next to Bob's entry. Bob's document disappears from h
 
 ---
 
-## SpiceDB Relationships Written During Walkthrough
+## How the App Uses SpiceDB
 
-| Step | Relationship written |
-|------|---------------------|
-| Alice first login | `keycloak_account:<kc-sub>#bound_to@user:<alice-uuid>` |
-| Bob first login | `github_account:<gh-id>#bound_to@user:<bob-uuid>` |
-| Alice creates document | `document:<doc-id>#owner@user:<alice-uuid>` |
-| Alice shares with Bob (viewer) | `document:<doc-id>#viewer@user:<bob-uuid>` |
-| Alice shares with Bob (editor) | `document:<doc-id>#editor@user:<bob-uuid>` |
-| Alice revokes Bob's access | (relationship deleted) |
+The app leans on SpiceDB for two jobs: **resolving a federated login to a canonical `user`**, and **gating document access**. Under the hood that's a handful of relationship writes plus a few reads and checks — the same operations whether the login came from Keycloak or GitHub.
 
----
-
-## SpiceDB API Calls Made by the App
-
-| Operation | SpiceDB API | Used for |
-|-----------|-------------|----------|
-| First login (new user) | `WriteRelationships` | Record IdP→user binding |
-| Login (returning user) | `LookupSubjects` | Resolve the IdP account's internal user |
-| Dashboard load | `LookupResources` | Find all viewable docs |
-| Document open | `CheckBulkPermissions(view, edit, share)` | Gate access and show/hide the edit + share UI in one round-trip |
-| Save edit | `CheckPermission(edit)` | Server-side auth check |
-| Share action | `WriteRelationships` | Grant access |
-| Revoke action | `DeleteRelationships` | Revoke access |
-| Share page sharees | `ReadRelationships` | List current access |
-
----
-
-## File Layout
-
+```mermaid
+flowchart LR
+    U(["<b>User actions</b><br/>log in · create · share · open · revoke"])
+    U --> W["<b>Writes</b><br/>WriteRelationships · DeleteRelationships"]
+    U --> R["<b>Reads and checks</b><br/>LookupSubjects · CheckBulkPermissions<br/>LookupResources · ReadRelationships"]
+    W --> B["<b>Identity bindings</b><br/>keycloak_account / github_account #bound_to @user"]
+    W --> G["<b>Document grants</b><br/>document #owner / #editor / #viewer @user"]
+    R --> B
+    R --> G
 ```
-federated-authz-demo/
-├── app.py                  # FastAPI application
-├── Dockerfile
-├── docker-compose.yml
-├── requirements.txt
-├── .env.example
-├── .gitignore
-├── spicedb/
-│   └── schema.zed          # SpiceDB schema (source of truth)
-├── keycloak/
-│   └── realm-export.json   # Pre-seeded Org A realm with alice + carol
-├── templates/              # Jinja2 server-rendered HTML
-│   ├── base.html
-│   ├── login.html
-│   ├── dashboard.html
-│   ├── document_new.html
-│   ├── document_view.html
-│   └── error.html
-├── static/
-│   └── style.css
-└── data/
-    └── documents/          # Document files (volume-mounted)
-```
+
+- **Writes** happen on login (the `#bound_to` binding), document creation (`#owner`), and sharing (`#viewer` / `#editor`); revoking deletes the grant.
+- **Reads** resolve a returning login (`LookupSubjects`), gate each document open (`CheckBulkPermissions`), list a user's viewable docs (`LookupResources`), and show current shares (`ReadRelationships`).
