@@ -31,6 +31,8 @@ from authzed.api.v1 import (
     DeleteRelationshipsRequest,
     CheckPermissionRequest,
     CheckPermissionResponse,
+    CheckBulkPermissionsRequest,
+    CheckBulkPermissionsRequestItem,
     LookupResourcesRequest,
     LookupSubjectsRequest,
     Relationship,
@@ -211,17 +213,72 @@ def delete_relationship(client: Client, resource_type: str, resource_id: str,
 def check_permission(client: Client, resource_type: str, resource_id: str,
                       permission: str, subject_id: str,
                       zedtoken: Optional[str] = None) -> bool:
-    resp = client.CheckPermission(CheckPermissionRequest(
-        resource=_obj(resource_type, resource_id),
-        permission=permission,
-        subject=_subj("user", subject_id),
-        consistency=_consistency(zedtoken),
-    ))
+    """Return True only if SpiceDB affirmatively grants the permission.
+
+    Fails CLOSED: any error (SpiceDB unavailable, bad request, …) is logged and
+    treated as "no permission", so an outage can never fall open into granting
+    access. Only PERMISSIONSHIP_HAS_PERMISSION grants; NO_PERMISSION and
+    CONDITIONAL_PERMISSION both deny. Every call site reads this as
+    ``if not check_permission(...): deny``.
+    """
+    try:
+        resp = client.CheckPermission(CheckPermissionRequest(
+            resource=_obj(resource_type, resource_id),
+            permission=permission,
+            subject=_subj("user", subject_id),
+            consistency=_consistency(zedtoken),
+        ))
+    except Exception as e:
+        print(f"[spicedb] CheckPermission({permission} on {resource_type}:{resource_id}) "
+              f"failed, denying: {e}")
+        return False
     return resp.permissionship == CheckPermissionResponse.PERMISSIONSHIP_HAS_PERMISSION
+
+
+def check_permissions_bulk(client: Client, resource_type: str, resource_id: str,
+                           permissions: list[str], subject_id: str,
+                           zedtoken: Optional[str] = None) -> dict[str, bool]:
+    """Check several permissions on one resource in a single round-trip.
+
+    Returns ``{permission: granted}``. Fails CLOSED: every permission starts at
+    False and only an affirmative HAS_PERMISSION flips it to True, so a failed
+    request, a per-item error, or a CONDITIONAL result all deny.
+    """
+    granted = {p: False for p in permissions}
+    try:
+        resp = client.CheckBulkPermissions(CheckBulkPermissionsRequest(
+            consistency=_consistency(zedtoken),
+            items=[CheckBulkPermissionsRequestItem(
+                resource=_obj(resource_type, resource_id),
+                permission=p,
+                subject=_subj("user", subject_id),
+            ) for p in permissions],
+        ))
+    except Exception as e:
+        print(f"[spicedb] CheckBulkPermissions on {resource_type}:{resource_id} "
+              f"failed, denying all: {e}")
+        return granted
+    for pair in resp.pairs:
+        if pair.HasField("item"):
+            granted[pair.request.permission] = (
+                pair.item.permissionship == CheckPermissionResponse.PERMISSIONSHIP_HAS_PERMISSION
+            )
+        else:
+            # Per-item error from SpiceDB: leave this permission denied (fail closed).
+            print(f"[spicedb] bulk check error for '{pair.request.permission}' on "
+                  f"{resource_type}:{resource_id}: {pair.error.message}")
+    return granted
 
 
 def lookup_viewable_documents(client: Client, user_id: str,
                               zedtoken: Optional[str] = None) -> list[str]:
+    """Return the ids of documents the user can view.
+
+    Fails CLOSED: on any error, log and return an empty list rather than a
+    partially-streamed set — the dashboard shows nothing instead of a misleading
+    listing. (LookupResources only ever yields authorized resources, so this can
+    never over-list; the empty return is purely to avoid a confusing partial.)
+    """
     doc_ids = []
     try:
         for resp in client.LookupResources(LookupResourcesRequest(
@@ -231,8 +288,10 @@ def lookup_viewable_documents(client: Client, user_id: str,
             consistency=_consistency(zedtoken),
         )):
             doc_ids.append(resp.resource_object_id)
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"[spicedb] LookupResources(view) for user:{user_id} failed, "
+              f"returning no documents: {e}")
+        return []
     return doc_ids
 
 
@@ -283,8 +342,11 @@ def read_document_relationships(client: Client, doc_id: str,
                 "subject_type": rel.subject.object.object_type,
                 "subject_id": rel.subject.object.object_id,
             })
-    except Exception:
-        pass
+    except Exception as e:
+        # Fail closed: on error show no sharees rather than a partial list.
+        print(f"[spicedb] ReadRelationships for document:{doc_id} failed, "
+              f"returning no sharees: {e}")
+        return []
     return results
 
 
@@ -634,15 +696,20 @@ async def view_document(request: Request, doc_id: str):
     client = get_spicedb()
     zedtoken = request.session.get("zedtoken")
 
-    if not check_permission(client, "document", doc_id, "view", user["id"], zedtoken):
+    # One round-trip for all three permissions on this document; fails closed
+    # (every permission defaults to denied if the check errors).
+    perms = check_permissions_bulk(
+        client, "document", doc_id, ["view", "edit", "share"], user["id"], zedtoken
+    )
+    if not perms["view"]:
         return templates.TemplateResponse("error.html", {
             "request": request,
             "error": "Access denied. You do not have permission to view this document.",
             "user": user,
         }, status_code=403)
 
-    can_edit = check_permission(client, "document", doc_id, "edit", user["id"], zedtoken)
-    can_share = check_permission(client, "document", doc_id, "share", user["id"], zedtoken)
+    can_edit = perms["edit"]
+    can_share = perms["share"]
 
     content = ""
     filepath = DOCUMENTS_DIR / doc["filename"]

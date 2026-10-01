@@ -212,9 +212,7 @@ Alice can click **Revoke** next to Bob's entry. Bob's document disappears from h
 | First login (new user) | `WriteRelationships` | Record IdP→user binding |
 | Login (returning user) | `LookupSubjects` | Resolve the IdP account's internal user |
 | Dashboard load | `LookupResources` | Find all viewable docs |
-| Document open | `CheckPermission(view)` | Gate document access |
-| Edit form display | `CheckPermission(edit)` | Show/hide edit UI |
-| Share section display | `CheckPermission(share)` | Show/hide share UI |
+| Document open | `CheckBulkPermissions(view, edit, share)` | Gate access and show/hide the edit + share UI in one round-trip |
 | Save edit | `CheckPermission(edit)` | Server-side auth check |
 | Share action | `WriteRelationships` | Grant access |
 | Revoke action | `DeleteRelationships` | Revoke access |
