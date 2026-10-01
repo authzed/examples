@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Dashboard &mdash; FedAuthZ Demo{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h2>My Documents</h2>
+    <a href="/documents/new" class="btn btn-primary">+ New Document</a>
+</div>
+
+{% if documents %}
+<div class="doc-grid">
+    {% for doc in documents %}
+    <a href="/documents/{{ doc.id }}" class="doc-card">
+        <div class="doc-title">{{ doc.title }}</div>
+        <div class="doc-meta">
+            Created {{ doc.created_at[:10] }}
+            {% if doc.owner_user_id == user.id %}
+            <span class="badge badge-owner">owner</span>
+            {% endif %}
+        </div>
+    </a>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+    <p>No documents yet. <a href="/documents/new">Create your first document</a> or ask someone to share one with you.</p>
+    <p class="hint">SpiceDB LookupResources found 0 documents you can view.</p>
+</div>
+{% endif %}
+{% endblock %}

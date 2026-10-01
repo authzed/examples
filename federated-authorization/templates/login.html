@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In &mdash; FedAuthZ Demo</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="login-page">
+<main class="login-container">
+    <div class="login-card">
+        <div class="login-header">
+            <span class="logo-large">&#128274;</span>
+            <h1>FedAuthZ Demo</h1>
+            <p class="subtitle">Federated Identity &plus; SpiceDB Fine-Grained Authorization</p>
+        </div>
+
+        <div class="login-divider">
+            <span>Choose your organization</span>
+        </div>
+
+        <div class="login-options">
+            <a href="/auth/keycloak/login" class="btn btn-keycloak btn-lg">
+                <span class="btn-icon">&#127981;</span>
+                <div>
+                    <div class="btn-title">Log in with Keycloak</div>
+                    <div class="btn-sub">Org A (self-hosted IdP)</div>
+                </div>
+            </a>
+
+            <a href="/auth/github/login" class="btn btn-github btn-lg">
+                <span class="btn-icon">&#128025;</span>
+                <div>
+                    <div class="btn-title">Log in with GitHub</div>
+                    <div class="btn-sub">Org B (external OAuth)</div>
+                </div>
+            </a>
+        </div>
+
+        <div class="login-info">
+            <h3>Demo Keycloak users</h3>
+            <table class="creds-table">
+                <tr><td><code>alice@keycloak.com</code></td><td><code>alice123</code></td></tr>
+                <tr><td><code>carol@keycloak.com</code></td><td><code>carol123</code></td></tr>
+            </table>
+            <p class="hint">GitHub users: log in with your own GitHub account.</p>
+        </div>
+    </div>
+</main>
+<footer class="footer">
+    <small>FedAuthZ Demo &mdash; SpiceDB + Keycloak + GitHub OAuth</small>
+</footer>
+</body>
+</html>

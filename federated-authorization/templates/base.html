@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}FedAuthZ Demo{% endblock %}</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+{% if user %}
+<nav class="navbar">
+    <div class="nav-brand">
+        <span class="logo">&#128274;</span> FedAuthZ Demo
+    </div>
+    <div class="nav-user">
+        <span class="badge badge-{{ 'keycloak' if 'Keycloak' in user.provider else 'github' }}">
+            {{ user.provider }}
+        </span>
+        <span class="user-info">
+            <strong>{{ user.display_name }}</strong>
+            <small>{{ user.email }}</small>
+        </span>
+        <a href="/auth/logout" class="btn btn-sm btn-outline">Logout</a>
+    </div>
+</nav>
+{% endif %}
+
+<main class="container">
+    {% block content %}{% endblock %}
+</main>
+
+<footer class="footer">
+    <small>Federated AuthZ Demo &mdash; SpiceDB + Keycloak + GitHub OAuth</small>
+</footer>
+</body>
+</html>

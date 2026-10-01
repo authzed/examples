@@ -19,6 +19,8 @@ Examples in this repository include:
 - How to set up SpiceDB with tracing: see [tracing](./tracing)
 - How to invoke SpiceDB as a library: see [library](./spicedb-as-library)
 - How to run SpiceDB in a Kubernetes cluster: see [kubernetes](./kubernetes)
+- How to build an agentic RAG system with fine-grained authorization: see [agentic-rag-authorization](./agentic-rag-authorization)
+- How to federate authorization across multiple identity providers: see [federated-authorization](./federated-authorization)
 - CI/CD Workflows
 
 Have questions? Join our [Discord].
