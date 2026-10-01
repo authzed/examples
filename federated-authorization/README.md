@@ -46,7 +46,7 @@ definition document {
 
 ### Persistence
 
-SpiceDB is backed by **PostgreSQL** (`--datastore-engine=postgres`), so every relationship — the IdP→user bindings *and* the document grants — survives a restart of the stack. A one-shot `spicedb migrate head` service initializes the Postgres schema before SpiceDB starts serving.
+SpiceDB is backed by **PostgreSQL** (`--datastore-engine=postgres`), so every relationship — the IdP→user bindings *and* the document grants — survives a restart of the stack. A one-shot `datastore migrate head` service initializes the Postgres schema before SpiceDB starts serving.
 
 This matters: with SpiceDB's in-memory engine, a restart wipes every binding while the app's own database persists, so returning users get minted a fresh `user:<uuid>` — duplicate users, and documents that silently lose their grants. Persisting SpiceDB fixes both at the source. The app's SQLite database holds only user *profiles* (for display) and document *metadata*; SpiceDB remains the single source of truth for identity bindings and authorization.
 

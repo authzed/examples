@@ -54,7 +54,7 @@ services:
   # serve' waits for this to complete (service_completed_successfully) so it
   # never starts against an unmigrated database.
   spicedb-migrate:
-    image: "authzed/spicedb:latest"
+    image: "authzed/spicedb:v1.56.1"
     command: "datastore migrate head"
     environment:
       <<: *spicedb-datastore
@@ -64,7 +64,7 @@ services:
     restart: "on-failure"
 
   spicedb:
-    image: "authzed/spicedb:latest"
+    image: "authzed/spicedb:v1.56.1"
     command: >
       serve
       --grpc-preshared-key=demo-token-do-not-use-in-prod
