@@ -8,7 +8,7 @@ Different organizations use different identity providers, but a single SpiceDB i
 
 ## Architecture
 
-![Many identity providers, one federated authorization: the app resolves each login from a swappable IdP to an internal user via a bound_to lookup in SpiceDB, which stores the identity bindings and governs document access for internal users only](architecture.png)
+![Many identity providers, one federated authorization: the app resolves each login from a swappable IdP to an internal user via a bound_to lookup in SpiceDB, which stores the identity bindings and governs document access for internal users, and persists its relationships to a PostgreSQL datastore so they survive restarts](architecture.png)
 
 ### The Federated Identity Pattern
 
