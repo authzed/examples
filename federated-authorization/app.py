@@ -550,12 +550,15 @@ async def logout(request: Request):
     # re-authenticates — making it look like logout did nothing.
     #
     # This uses an OIDC front-channel (RP-initiated) logout: the browser is
-    # redirected to Keycloak's end-session endpoint on the *public* issuer
-    # (KEYCLOAK_PUBLIC_ISSUER), which the browser can reach and whose host
-    # matches the id_token's issuer.  A server-side back-channel call cannot work
-    # here — the app can only reach Keycloak at the internal address
-    # (keycloak:8080), and Keycloak rejects a token issued for the public
-    # address.  Keycloak ends the session and redirects the browser back to
+    # redirected to Keycloak's end-session endpoint on the public issuer
+    # (KEYCLOAK_PUBLIC_ISSUER / localhost:8080), which the browser can reach.
+    # Keycloak only honours an id_token_hint whose issuer matches that endpoint's
+    # host, so the realm pins frontendUrl to the public address (see
+    # realm-export.json): every token it mints carries iss=http://localhost:8080/
+    # even though the app exchanges the auth code over the internal address
+    # (keycloak:8080).  Without that pin the hint would be issued for keycloak:8080
+    # and Keycloak would reject it against the localhost request, leaving the SSO
+    # session alive.  Keycloak ends the session and redirects the browser back to
     # post_logout_redirect_uri (registered on the client in the realm).
     #
     # GitHub has no equivalent: a third-party app cannot (and should not) end a

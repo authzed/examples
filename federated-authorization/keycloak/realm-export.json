@@ -9,6 +9,9 @@
   "resetPasswordAllowed": true,
   "editUsernameAllowed": false,
   "bruteForceProtected": false,
+  "attributes": {
+    "frontendUrl": "http://localhost:8080"
+  },
   "clients": [
     {
       "clientId": "federated-authz-demo",

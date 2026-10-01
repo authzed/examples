@@ -1,4 +1,11 @@
 ---
+# Shared SpiceDB datastore config, passed as environment so the Postgres
+# password stays out of the process command line (visible via `docker inspect`)
+# and is defined in exactly one place.
+x-spicedb-datastore: &spicedb-datastore
+  SPICEDB_DATASTORE_ENGINE: "postgres"
+  SPICEDB_DATASTORE_CONN_URI: "postgres://spicedb:spicedb@postgres:5432/spicedb?sslmode=disable"
+
 services:
   keycloak:
     image: "quay.io/keycloak/keycloak:24.0"
@@ -48,10 +55,9 @@ services:
   # never starts against an unmigrated database.
   spicedb-migrate:
     image: "authzed/spicedb:latest"
-    command: >
-      datastore migrate head
-      --datastore-engine=postgres
-      --datastore-conn-uri=postgres://spicedb:spicedb@postgres:5432/spicedb?sslmode=disable
+    command: "datastore migrate head"
+    environment:
+      <<: *spicedb-datastore
     depends_on:
       postgres:
         condition: "service_healthy"
@@ -62,9 +68,9 @@ services:
     command: >
       serve
       --grpc-preshared-key=demo-token-do-not-use-in-prod
-      --datastore-engine=postgres
-      --datastore-conn-uri=postgres://spicedb:spicedb@postgres:5432/spicedb?sslmode=disable
       --http-enabled
+    environment:
+      <<: *spicedb-datastore
     depends_on:
       spicedb-migrate:
         condition: "service_completed_successfully"
