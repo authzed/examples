@@ -35,8 +35,8 @@ Technical details for those implementing similar systems or extending this one.
 │                       │                                │
 │            ┌──────────┼──────────┐                     │
 │            ▼          ▼          ▼                     │
-│        Weaviate    SpiceDB    OpenAI                   │
-│        (Search)    (AuthZ)    (LLM)                    │
+│        Elasticsearch   SpiceDB   Mistral               │
+│        (Search)        (AuthZ)   (LLM)                 │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -107,9 +107,9 @@ result = run_agentic_rag(
 python3 run_ui.py
 ```
 This launcher performs pre-flight checks:
-- Verifies Weaviate connectivity
+- Verifies Elasticsearch connectivity
 - Verifies SpiceDB connectivity
-- Checks OpenAI API key configuration
+- Checks Mistral API key configuration
 - Validates documents are loaded
 - Auto-opens browser to http://localhost:8000
 
@@ -224,7 +224,7 @@ async def get_users():
 @router.get("/health")
 async def health_check():
     # Returns service status
-    # TODO: Actually check Weaviate/SpiceDB connectivity
+    # TODO: Actually check Elasticsearch/SpiceDB connectivity
 ```
 
 **3. Pydantic Models (`api/models.py`)**
@@ -308,7 +308,7 @@ FastAPI Router (routes.py)
 run_agentic_rag_async()
   │
   ▼ Execute LangGraph
-  │ 1. Retrieval Node → Weaviate BM25 search
+  │ 1. Retrieval Node → Elasticsearch semantic vector search
   │ 2. Authorization Node → SpiceDB permission checks
   │ 3. Generation Node → LLM answer generation
   │
@@ -461,7 +461,7 @@ The API layer is designed for **demonstration and education**, not production us
 
 4. **No Rate Limiting**
    - No protection against abuse or DoS
-   - OpenAI API costs could accumulate
+   - Mistral API costs could accumulate
 
 **Why This Is Acceptable for Demo:**
 - System demonstrates authorization concepts (SpiceDB)
@@ -581,7 +581,7 @@ async def run_agentic_rag_async(query: str, subject_id: str, max_attempts: int) 
 
 1. **Concurrency**
    - Server can handle multiple queries simultaneously
-   - Other requests aren't blocked while one query waits for OpenAI
+   - Other requests aren't blocked while one query waits for Mistral
 
 2. **Resource Efficiency**
    - Async I/O doesn't waste threads on waiting
@@ -628,9 +628,10 @@ async def run_agentic_rag_async(query, subject_id, max_attempts):
 
 **Node Compatibility:**
 
-All nodes work with both sync and async execution:
-- LangChain components support async (Weaviate client, OpenAI)
-- SpiceDB gRPC client is synchronous but fast (~40-50ms)
+All nodes run under both the sync and async entry points:
+- The retrieval and generation nodes are synchronous — the `elasticsearch` client
+  and the Mistral embedding/LLM calls (`chain.invoke`) are blocking
+- The SpiceDB permission check (authorization node) runs on async gRPC and is fast (~40-50ms)
 - No code duplication required
 
 ### LangGraph State Machine
@@ -639,7 +640,7 @@ All nodes work with both sync and async execution:
 ```
 START
   ↓
-Retrieval Node (Weaviate BM25)
+Retrieval Node (Elasticsearch semantic vector search)
   ↓
 Authorization Node (SpiceDB) ◄── Security Boundary (deterministic)
   ↓
@@ -677,12 +678,12 @@ AgenticRAGState = TypedDict("AgenticRAGState", {
 
 ### Retrieval Node (Deterministic)
 
-**Purpose**: Execute semantic/keyword search in Weaviate.
+**Purpose**: Execute semantic vector search in Elasticsearch.
 
 **Input**: `query` from state
 
 **Operation**:
-- Weaviate BM25 keyword search (default)
+- Elasticsearch semantic vector search: kNN over `dense_vector` field using cosine similarity (default)
 - Returns top-k documents (typically 5)
 - No authorization filtering at this stage
 - Direct execution without planning overhead
@@ -763,7 +764,7 @@ definition document {
 1. User makes query
    subject_id: "alice"
 
-2. Weaviate retrieves documents
+2. Elasticsearch retrieves documents
    [eng-001, eng-002, hr-001]
 
 3. For each document, SpiceDB checks:
@@ -835,7 +836,7 @@ hr-001 (document) ──viewer──> hr_manager (user)
               ▼
 ┌───────────────────────────────────┐
 │    Trusted Zone                   │
-│  SpiceDB + Weaviate               │
+│  SpiceDB + Elasticsearch          │
 │  Authorized data                  │
 └───────────────────────────────────┘
 ```
@@ -866,7 +867,7 @@ hr-001 (document) ──viewer──> hr_manager (user)
            ▼
 ┌───────────────────────────┐
 │    Trusted Zone           │
-│  SpiceDB + Weaviate       │
+│  SpiceDB + Elasticsearch  │
 │  Authorized data          │
 └───────────────────────────┘
 ```
@@ -1002,7 +1003,7 @@ def authorize(state):
 ```
 Query
   ↓
-Retrieve (BM25 search)
+Retrieve (semantic vector search)
   ↓
 Authorize (filter)
   ↓
@@ -1100,7 +1101,7 @@ from fastapi import APIRouter
 @router.get("/documents")
 async def list_documents():
     """List all documents with metadata."""
-    # Query Weaviate for all documents
+    # Query Elasticsearch for all documents
     # Return structured list
     return {"documents": [...]}
 
@@ -1212,18 +1213,18 @@ def format_document_detailed(doc: Document) -> dict:
 ## Project Structure
 
 ```
-agentic-rag-weaviate/
+agentic-rag-elasticsearch/
 ├── agentic_rag/               # Core RAG engine
 │   ├── graph.py               # LangGraph state machine (sync + async entry points)
 │   ├── state.py               # AgenticRAGState TypedDict definition
 │   ├── config.py              # Configuration management (env vars)
 │   ├── nodes/
-│   │   ├── retrieval_node.py  # Weaviate BM25 search
+│   │   ├── retrieval_node.py  # Elasticsearch semantic vector search
 │   │   ├── authorization_node.py  # SpiceDB filtering (security boundary)
 │   │   ├── reasoning_node.py  # Optional: adaptive retry logic
 │   │   └── generation_node.py # Final answer with context
 │   ├── authorization_helpers.py  # Batch permission checking
-│   ├── weaviate_client.py     # Connection pooling for Weaviate
+│   ├── elasticsearch_client.py     # Connection pooling for Elasticsearch
 │   ├── grpc_helpers.py        # Connection pooling for SpiceDB
 │   ├── logging_config.py      # Structured JSON logging
 │   ├── node_helpers.py        # Shared utilities for nodes
@@ -1256,7 +1257,7 @@ agentic-rag-weaviate/
 │   └── PERMISSIONS.md         # Permission matrix and patterns
 │
 ├── run_ui.py                  # Web UI launcher with pre-flight checks
-├── docker-compose.yml         # Weaviate + SpiceDB services
+├── docker-compose.yml         # Elasticsearch + SpiceDB services
 ├── requirements.txt           # Python dependencies (includes fastapi, uvicorn)
 ├── .env.example               # Environment variable template
 ├── README.md                  # Overview, quick start, usage guide
@@ -1279,7 +1280,7 @@ agentic-rag-weaviate/
 **Shared Core:**
 - State machine: `agentic_rag/graph.py`
 - Nodes: `agentic_rag/nodes/*.py`
-- Services: `agentic_rag/weaviate_client.py`, `agentic_rag/grpc_helpers.py`
+- Services: `agentic_rag/elasticsearch_client.py`, `agentic_rag/grpc_helpers.py`
 
 ## Performance Characteristics
 
@@ -1322,11 +1323,11 @@ Async execution allows concurrent query handling:
 
 - **Single query**: ~3.5-4.5s
 - **5 concurrent queries**: ~4-5s each (minimal overhead)
-- **10 concurrent queries**: ~5-6s each (slight queueing at OpenAI)
+- **10 concurrent queries**: ~5-6s each (slight queueing at Mistral)
 
 **Bottlenecks:**
-1. OpenAI API calls (~2-3s) - most significant
-2. Weaviate search (~0.5-1s)
+1. Mistral API calls (~2-3s) - most significant
+2. Elasticsearch search (~0.5-1s)
 3. SpiceDB checks (~40-50ms for 3-5 documents)
 4. API/network overhead (~30-50ms total)
 
@@ -1379,7 +1380,7 @@ Every node updates the state with:
 
 ```
 [AIMessage] Planning: Searching for engineering documents...
-[SystemMessage] Retrieved 3 documents from Weaviate
+[SystemMessage] Retrieved 3 documents from Elasticsearch
 [SystemMessage] Authorization: 2/3 documents authorized (1 denied)
 [AIMessage] Reasoning: User has partial access, generating answer from available docs
 [AIMessage] Answer: Based on the 2 authorized documents...
@@ -1525,7 +1526,7 @@ For production deployment, consider tracking:
    - API response time (p50, p95, p99)
    - LangGraph execution time
    - Individual node execution times
-   - OpenAI API latency
+   - Mistral API latency
 
 2. **Authorization Metrics:**
    - Authorization pass rate (per user)
@@ -1542,8 +1543,8 @@ For production deployment, consider tracking:
 4. **Error Metrics:**
    - API error rate
    - Validation failures
-   - OpenAI API errors
-   - Service connectivity failures (Weaviate, SpiceDB)
+   - Mistral API errors
+   - Service connectivity failures (Elasticsearch, SpiceDB)
 
 ## Summary
 

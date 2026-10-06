@@ -1,14 +1,14 @@
 """Test fixtures for agentic RAG tests."""
 
 import pytest
-from pymilvus import MilvusClient
+from elasticsearch import Elasticsearch
 from agentic_rag.grpc_helpers import create_insecure_spicedb_client
 
 
 @pytest.fixture
-def milvus_client():
-    """Create MilvusClient for tests."""
-    return MilvusClient(uri="http://localhost:19530")
+def elasticsearch_client():
+    """Create Elasticsearch client for tests."""
+    return Elasticsearch("http://localhost:9200")
 
 
 @pytest.fixture

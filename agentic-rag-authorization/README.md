@@ -1,8 +1,6 @@
 # Agentic RAG with Fine-Grained Authorization
 
-> **Also available:** [Weaviate version](https://github.com/authzed/examples/tree/weaviate/agentic-rag-authorization) (BM25 keyword search) · [Mistral version](https://github.com/authzed/examples/tree/mistral/agentic-rag-authorization) (Mistral embeddings and LLM)
-
-This repository demonstrates how to combine agentic behavior with deterministic fine-grained authorization using LangGraph, SpiceDB, and [Milvus](https://github.com/milvus-io/milvus). You'll learn to build RAG systems where a user can only see information from the documents they have access to.
+This repository demonstrates how to combine agentic behavior with deterministic fine-grained authorization using LangGraph, SpiceDB, [Elasticsearch](https://github.com/elastic/elasticsearch), and [Mistral](https://mistral.ai/). You'll learn to build RAG systems where a user can only see information from the documents they have access to.
 
 This project uses the [LangChain SpiceDB](https://pypi.org/project/langchain-spicedb/) library.
 
@@ -34,7 +32,7 @@ This repo demonstrates:
 3. **Production features** - Structured logging, connection pooling, batch operations, error handling
 4. **Real-world complexity** - 50 documents, 4 permission patterns with hierarchies
 
-Note: Despite the "agentic RAG" name, the default mode is intentionally simple and deterministic (3 nodes: retrieve → authorize → generate). This provides fast, predictable behavior suitable for most use cases. There is a `MAX_RETRIES` option where the AI Agent can reason if it has to retrieve more data.
+Note: Despite the "agentic RAG" name, the default mode is intentionally simple and deterministic (3 nodes: retrieve → authorize → generate). This provides fast, predictable behavior suitable for most use cases. There is a `MAX_RETRIEVAL_ATTEMPTS` option where the AI Agent can reason if it has to retrieve more data.
 
 ## The Problem This Solves
 
@@ -48,7 +46,7 @@ Read the [OWASP Top 10 for LLM](https://owasp.org/www-project-top-10-for-large-l
 ## The Solution
 
 This implementation shows how to combine:
-- **Retrieval-first approach**: Semantic vector search without upfront planning overhead
+- **Retrieval-first approach**: Semantic vector search (Mistral embeddings in Elasticsearch) without upfront planning overhead
 - **Deterministic security**: SpiceDB authorization that cannot be bypassed
 - **Transparency**: Users understand what they can and can't access, and why
 
@@ -94,93 +92,69 @@ this question. This information is restricted to the engineering department."
 
 The agent transparently explains access limitations instead of failing silently.
 
-## Setup (5 minutes)
+## Setup & Run (5 minutes)
+
+The demo runs entirely through the web UI, which lets you switch users and watch the authorization boundary filter results in real time.
 
 ### Prerequisites
 - Docker & Docker Compose
 - Python 3.11+
-- OpenAI API key
+- Mistral API key
 
 ### Steps
 
 ```bash
-# 1. Configure
+# 1. Configure — add your Mistral API key to the new .env file
 cp .env.example .env
-# Edit .env with your actual OpenAI API key
 
-# 2. Start services
+# 2. Start Elasticsearch + SpiceDB
 docker-compose up -d
 
-# 3. Install dependencies
+# 3. Install dependencies (includes FastAPI + Uvicorn for the UI)
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
-```
 
-## Web UI
-
-A web interface is available to demonstrate the authorization capabilities interactively.
-
-### Quick Start
-
-```bash
-# 1. Ensure services are running and data is initialized
-docker-compose up -d
+# 4. Initialize data — embed 50 documents into Elasticsearch
+#    and write the permission model to SpiceDB
 python3 examples/setup_environment.py
 
-# 2. Install web dependencies
-pip install -r requirements.txt  # Includes fastapi and uvicorn
-
-# 3. Launch UI (includes pre-flight checks)
+# 5. Launch the web UI (runs pre-flight checks, then opens your browser)
 python3 run_ui.py
 ```
 
-The `setup_environment.py` script sets up Milvus as the vector database and SpiceDB with sample documents and department-based access control. It embeds all 50 documents using OpenAI's `text-embedding-3-small` and inserts them into Milvus, then writes a hierarchical permission model to SpiceDB: users assigned to departments, department-wide document access, 3 cross-department collaboration grants, and 3 individual user exceptions.
+`setup_environment.py` sets up Elasticsearch as the vector database and SpiceDB with sample documents and department-based access control. It embeds all 50 documents using Mistral's `mistral-embed` and indexes them into Elasticsearch, then writes a hierarchical permission model to SpiceDB: users assigned to departments, department-wide document access, 3 cross-department collaboration grants, and 3 individual user exceptions.
 
-The UI launcher will:
-- Verify documents are loaded in Milvus
-- Start the FastAPI server
-- Open your browser to http://localhost:8000
+`run_ui.py` verifies Elasticsearch and SpiceDB connectivity, confirms the documents are loaded, starts the FastAPI server, and opens http://localhost:8000.
 
-Here are a few sample prompts to try:
+### Try it out
 
-Choose "Bob" from "Sales" as the user and run the query "What are the company handbook guidelines?"
+Choose **Bob** from **Sales** and run the query *"What are the company handbook guidelines?"*
 
-You should see:
 ```
 📊 Retrieved: 5
 ✅ Authorized: 3
 ❌ Denied: 2
 ```
 
-Now run the same query as "HR Manager":
+Now run the same query as **HR Manager**:
+
 ```
 📊 Retrieved: 5
 ✅ Authorized: 5
 ❌ Denied: 0
 ```
 
-### Manual Start
+Same query, same retrieved documents — SpiceDB decides what each user is allowed to see.
+
+### Manual start (optional)
+
+Prefer to start the server yourself (for example, with live reload during development)?
 
 ```bash
-# Terminal 1: Start services (if not running)
-docker-compose up -d
-
-# Terminal 2: Start API server
+docker-compose up -d                                   # if not already running
 uvicorn api.main:app --reload --host 0.0.0.0 --port 8000
-
-# Browser
 open http://localhost:8000
-```
-
-## Run Without UI
-
-```bash
-# Initialize data
-python3 examples/setup_environment.py
-
-# Run demo
-python3 examples/basic_example.py
 ```
 
 ## How It Works
@@ -211,48 +185,42 @@ definition document {
 ### 2. State Flow
 
 **Default Mode (`max_attempts=1`)**
+
+```mermaid
+flowchart TD
+    Q([User Query]) --> R[Retrieval Node<br/>Elasticsearch semantic search · mistral-embed]
+    R --> A[Authorization Node<br/>SpiceDB permission filter]
+    A --> G([Generation Node<br/>Answer from authorized context])
+    class A boundary
+    classDef boundary fill:#fde68a,stroke:#b45309,stroke-width:2px,color:#1f2937;
 ```
-User Query
-    ↓
-Retrieval Node ← Milvus semantic vector search (text-embedding-3-small)
-    ↓
-Authorization Node ← SpiceDB filters (SECURITY BOUNDARY - cannot be bypassed)
-    ↓
-Generation Node ← Answer with authorized context + explanations
-```
+
+The **Authorization Node** (highlighted) is the security boundary: it always runs, it's deterministic, and the agent cannot bypass it.
 
 **Adaptive Mode (`max_attempts > 1`)**
 
 When `max_attempts` is set above 1, a reasoning node activates if authorization fails. The LLM analyzes why access was denied and decides whether a different retrieval strategy might find documents the user *can* access:
 
-```
-User Query
-    ↓
-Retrieval Node
-    ↓
-Authorization Node ← still deterministic, still non-bypassable
-    ↓
- some docs authorized? → Yes → Generation Node
-    ↓ No
-Reasoning Node ← LLM decides: retry with different query, or give up?
-    ↓
- attempts left? → Yes → Retrieval Node (loop)
-    ↓ No
-Generation Node ← explains the denial
+```mermaid
+flowchart TD
+    Q([User Query]) --> R[Retrieval Node]
+    R --> A[Authorization Node<br/>deterministic · non-bypassable]
+    A --> D{Some docs<br/>authorized?}
+    D -->|Yes| G([Generation Node])
+    D -->|No| RE[Reasoning Node<br/>LLM: retry with a different query, or give up?]
+    RE --> AL{Attempts<br/>left?}
+    AL -->|Yes| R
+    AL -->|No| G2([Generation Node<br/>explains the denial])
+    class A boundary
+    classDef boundary fill:#fde68a,stroke:#b45309,stroke-width:2px,color:#1f2937;
 ```
 
 For example, if Bob (sales) asks about "microservices architecture" and the first retrieval returns only engineering-restricted docs, the reasoning node might try a broader query that surfaces a shared architecture doc Bob can actually access.
 
-Enable it by setting `MAX_RETRIEVAL_ATTEMPTS` in `.env` (or passing `max_attempts` directly):
+Enable it by setting `MAX_RETRIEVAL_ATTEMPTS` in `.env`:
 
 ```bash
 MAX_RETRIEVAL_ATTEMPTS=3  # default is 1
-```
-
-Or in code:
-
-```python
-result = run_agentic_rag(query="...", subject_id="bob", max_attempts=3)
 ```
 
 ### 3. Security Guarantees
@@ -262,51 +230,21 @@ result = run_agentic_rag(query="...", subject_id="bob", max_attempts=3)
 - **Fail closed**: Access denied unless explicitly granted
 - **Observable**: Full audit trail in state
 
-## Project Structure
-
-```
-agentic-rag-authorization/
-├── agentic_rag/
-│   ├── graph.py               # LangGraph state machine
-│   ├── state.py               # State schema
-│   ├── config.py              # Configuration management
-│   ├── nodes/
-│   │   ├── retrieval_node.py      # Milvus semantic vector search
-│   │   ├── authorization_node.py  # SpiceDB filtering (security boundary)
-│   │   ├── reasoning_node.py      # Optional: adaptive retry logic
-│   │   └── generation_node.py     # Final answer with context
-│   ├── milvus_client.py       # Connection pooling for Milvus
-│   ├── grpc_helpers.py        # Connection pooling for SpiceDB
-│   ├── logging_config.py      # Structured JSON logging
-│   └── validation.py          # Input validation and sanitization
-├── examples/
-│   ├── setup_environment.py   # Initialize data (embeds and loads 50 documents)
-│   └── basic_example.py       # 8 demo scenarios
-├── scripts/
-│   ├── generate_documents.py  # Generate 50 .txt files
-│   ├── parse_documents.py     # Parse documents into objects
-│   └── verify_permissions.py  # Test authorization patterns
-├── data/
-│   ├── documents/             # 50 .txt files (5 departments)
-│   ├── schema.zed             # SpiceDB permission schema
-│   └── PERMISSIONS.md         # Permission matrix
-└── docker-compose.yml         # Milvus + SpiceDB
-```
-
 ## Configuration
 
 Environment variables (`.env`):
 
 ```bash
 # Required
-OPENAI_API_KEY=sk-...
+MISTRAL_API_KEY=...
 
 # Optional (defaults shown)
-MILVUS_URI=http://localhost:19530
-MILVUS_TOKEN=
+ELASTICSEARCH_URL=http://localhost:9200
+ELASTICSEARCH_API_KEY=
 SPICEDB_ENDPOINT=localhost:50051
 SPICEDB_TOKEN=devtoken
 MAX_RETRIEVAL_ATTEMPTS=1
+LOG_LEVEL=INFO
 ```
 
 ## Dataset Overview
@@ -321,33 +259,11 @@ The repository includes a realistic 50-document dataset across 5 departments.
 
 See [data/PERMISSIONS.md](data/PERMISSIONS.md) for the complete permission matrix.
 
-## Sample Scenarios
-
-The `examples/basic_example.py` demonstrates 8 scenarios:
-
-1. **Department Access** - alice queries engineering documents
-2. **Access Denial** - bob attempts to access engineering documents
-3. **Cross-Department** - bob accesses shared architecture document
-4. **Individual Exception** - alice accesses sales proposal (special grant)
-5. **Public Access** - Anyone can access company handbooks
-6. **Finance Department** - finance_manager queries financial reports
-7. **HR Department** - hr_manager queries HR policies
-8. **Transparent Explanations** - Agent explains why access was denied
-
-## Testing
-
-```bash
-# Run all tests
-pytest tests/
-
-# Run specific test
-pytest tests/test_basic_flow.py::test_authorized_access
-```
-
 ## Learn More
 
 - **SpiceDB**: https://authzed.com/docs
-- **Milvus**: https://milvus.io/docs
+- **Elasticsearch**: https://www.elastic.co/docs
+- **Mistral**: https://docs.mistral.ai/
 - **LangGraph**: https://langchain-ai.github.io/langgraph/
 - **langchain-spicedb**: https://github.com/authzed/langchain-spicedb
 

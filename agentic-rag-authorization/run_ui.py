@@ -18,16 +18,19 @@ def check_services():
         print("     Copy .env.example to .env and configure it")
         return False
 
-    # Check Milvus
+    # Check Elasticsearch
     try:
         from agentic_rag.config import get_config
-        from agentic_rag.milvus_client import get_milvus_client
+        from agentic_rag.elasticsearch_client import get_elasticsearch_client
 
         config = get_config()
-        milvus_client = get_milvus_client(config.milvus_uri, config.milvus_token)
-        print("  ✅ Milvus connected")
+        es_client = get_elasticsearch_client(
+            config.elasticsearch_url, config.elasticsearch_api_key
+        )
+        es_client.info()
+        print("  ✅ Elasticsearch connected")
     except Exception as e:
-        print(f"  ❌ Milvus not available: {e}")
+        print(f"  ❌ Elasticsearch not available: {e}")
         print("     Run: docker-compose up -d")
         return False
 
@@ -42,30 +45,25 @@ def check_services():
         print("     Run: docker-compose up -d")
         return False
 
-    # Check OpenAI key
-    if not config.openai_api_key or config.openai_api_key == "your-openai-api-key-here":
-        print("  ❌ OPENAI_API_KEY not configured")
+    # Check Mistral key
+    if not config.mistral_api_key or config.mistral_api_key == "your-mistral-api-key-here":
+        print("  ❌ MISTRAL_API_KEY not configured")
         print("     Set it in .env file")
         return False
-    print("  ✅ OpenAI API key configured")
+    print("  ✅ Mistral API key configured")
 
     # Check if documents are loaded
     try:
-        if milvus_client.has_collection("Documents"):
-            results = milvus_client.query(
-                collection_name="Documents",
-                filter='doc_id != ""',
-                output_fields=["doc_id"],
-                limit=1,
-            )
-            if results:
-                print("  ✅ Documents loaded in Milvus")
+        if es_client.indices.exists(index="documents"):
+            count = es_client.count(index="documents")["count"]
+            if count > 0:
+                print("  ✅ Documents loaded in Elasticsearch")
             else:
-                print("  ⚠️  No documents found in Milvus")
+                print("  ⚠️  No documents found in Elasticsearch")
                 print("     Run: python examples/setup_environment.py")
                 return False
         else:
-            print("  ⚠️  Documents collection does not exist in Milvus")
+            print("  ⚠️  documents index does not exist in Elasticsearch")
             print("     Run: python examples/setup_environment.py")
             return False
     except Exception as e:
