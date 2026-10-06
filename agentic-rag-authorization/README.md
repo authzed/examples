@@ -17,6 +17,10 @@ The two takeaways from this demo are:
 
 2. Never ever let an AI Agent *decide* if it needs to check for authorization. Gen AI is inherently probabilistic so you have to ensure that permission checks are deterministic and cannot be skipped.
 
+The diagram below shows the end-to-end request flow: the application embeds the query with Mistral, retrieves relevant context from Elasticsearch, checks permissions in SpiceDB, and only then passes the authorized context to the Mistral LLM to generate a response.
+
+![Agentic RAG request flow: a user query is embedded with Mistral, searched against Elasticsearch, filtered through a SpiceDB permission check, and answered by the Mistral LLM before the response returns to the user](agentic-rag-flow.png)
+
 ## Documentation Navigation
 
 - **[README.md](README.md)** (you are here) - Overview, quick start, core concepts
