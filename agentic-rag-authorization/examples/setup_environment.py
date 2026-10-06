@@ -1,4 +1,4 @@
-"""Initialize Milvus and SpiceDB with sample data."""
+"""Initialize Elasticsearch and SpiceDB with sample data."""
 
 import sys
 import os
@@ -8,8 +8,8 @@ load_dotenv()
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-import openai
-from pymilvus import MilvusClient, DataType
+from langchain_mistralai import MistralAIEmbeddings
+from elasticsearch import Elasticsearch, helpers
 from authzed.api.v1 import (
     WriteSchemaRequest,
     WriteRelationshipsRequest,
@@ -170,61 +170,71 @@ def setup_spicedb():
     print(f"    - Public access: 5 documents accessible to all users")
 
 
-def setup_milvus():
-    """Setup Milvus with sample documents using OpenAI semantic embeddings."""
-    print("\nSetting up Milvus...")
+def setup_elasticsearch():
+    """Setup Elasticsearch with sample documents using Mistral semantic embeddings."""
+    print("\nSetting up Elasticsearch...")
 
-    milvus_uri = os.getenv("MILVUS_URI", "http://localhost:19530")
-    openai_api_key = os.getenv("OPENAI_API_KEY", "")
+    es_url = os.getenv("ELASTICSEARCH_URL", "http://localhost:9200")
+    es_api_key = os.getenv("ELASTICSEARCH_API_KEY", "")
+    mistral_api_key = os.getenv("MISTRAL_API_KEY", "")
 
-    client = MilvusClient(uri=milvus_uri)
-    oai_client = openai.OpenAI(api_key=openai_api_key)
+    if es_api_key:
+        client = Elasticsearch(es_url, api_key=es_api_key)
+    else:
+        client = Elasticsearch(es_url)
+    embeddings = MistralAIEmbeddings(model="mistral-embed", api_key=mistral_api_key)
 
-    if client.has_collection("Documents"):
-        client.drop_collection("Documents")
-        print("  ✅ Dropped existing Documents collection")
+    if client.indices.exists(index="documents"):
+        client.indices.delete(index="documents")
+        print("  ✅ Dropped existing documents index")
 
-    schema = client.create_schema(auto_id=False, enable_dynamic_field=False)
-    schema.add_field("doc_id", DataType.VARCHAR, max_length=256, is_primary=True)
-    schema.add_field("title", DataType.VARCHAR, max_length=512)
-    schema.add_field("content", DataType.VARCHAR, max_length=65535)
-    schema.add_field("department", DataType.VARCHAR, max_length=128)
-    schema.add_field("classification", DataType.VARCHAR, max_length=128)
-    schema.add_field("embedding", DataType.FLOAT_VECTOR, dim=1536)
+    mappings = {
+        "properties": {
+            "doc_id": {"type": "keyword"},
+            "title": {"type": "text"},
+            "content": {"type": "text"},
+            "department": {"type": "keyword"},
+            "classification": {"type": "keyword"},
+            "embedding": {
+                "type": "dense_vector",
+                "dims": 1024,
+                "index": True,
+                "similarity": "cosine",
+            },
+        }
+    }
 
-    index_params = client.prepare_index_params()
-    index_params.add_index(
-        field_name="embedding",
-        metric_type="COSINE",
-        index_type="IVF_FLAT",
-        params={"nlist": 128},
-    )
-
-    client.create_collection("Documents", schema=schema, index_params=index_params)
-    print("  ✅ Documents collection created")
+    client.indices.create(index="documents", mappings=mappings)
+    print("  ✅ documents index created")
 
     documents = load_all_documents()
     print(f"  ✅ Loaded {len(documents)} documents from data/documents/")
 
-    rows = []
-    for i, doc in enumerate(documents):
-        response = oai_client.embeddings.create(
-            model="text-embedding-3-small",
-            input=doc["content"],
-        )
-        rows.append({
-            "doc_id": doc["doc_id"],
-            "title": doc["title"],
-            "content": doc["content"],
-            "department": doc["department"],
-            "classification": doc["classification"],
-            "embedding": response.data[0].embedding,
-        })
-        if (i + 1) % 10 == 0:
-            print(f"  Embedded {i + 1}/{len(documents)} documents...")
+    # Embed all documents in a single batched call. embed_documents() chunks the
+    # inputs internally, so this issues far fewer Mistral API requests than
+    # embedding one document at a time (and is much less likely to hit rate limits).
+    doc_embeddings = embeddings.embed_documents([doc["content"] for doc in documents])
+    print(f"  ✅ Embedded {len(doc_embeddings)} documents")
 
-    client.insert("Documents", rows)
-    print(f"  ✅ Inserted {len(rows)} documents with embeddings")
+    actions = [
+        {
+            "_index": "documents",
+            "_id": doc["doc_id"],
+            "_source": {
+                "doc_id": doc["doc_id"],
+                "title": doc["title"],
+                "content": doc["content"],
+                "department": doc["department"],
+                "classification": doc["classification"],
+                "embedding": embedding,
+            },
+        }
+        for doc, embedding in zip(documents, doc_embeddings)
+    ]
+
+    helpers.bulk(client, actions)
+    client.indices.refresh(index="documents")
+    print(f"  ✅ Inserted {len(actions)} documents with embeddings")
 
     dept_counts = {}
     for doc in documents:
@@ -243,7 +253,7 @@ def main():
     print("=" * 60)
 
     setup_spicedb()
-    setup_milvus()
+    setup_elasticsearch()
 
     print("\n" + "=" * 60)
     print("✅ Setup complete!")

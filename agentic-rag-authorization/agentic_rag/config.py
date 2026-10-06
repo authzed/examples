@@ -12,16 +12,16 @@ load_dotenv()
 class Config:
     """Configuration for agentic RAG system."""
 
-    # Milvus
-    milvus_uri: str
-    milvus_token: str
+    # Elasticsearch
+    elasticsearch_url: str
+    elasticsearch_api_key: str
 
     # SpiceDB
     spicedb_endpoint: str
     spicedb_token: str
 
-    # OpenAI
-    openai_api_key: str
+    # Mistral
+    mistral_api_key: str
 
     # Agent behavior
     max_retrieval_attempts: int = 1
@@ -33,11 +33,11 @@ class Config:
     def from_env(cls):
         """Load configuration from environment variables."""
         return cls(
-            milvus_uri=os.getenv("MILVUS_URI", "http://localhost:19530"),
-            milvus_token=os.getenv("MILVUS_TOKEN", ""),
+            elasticsearch_url=os.getenv("ELASTICSEARCH_URL", "http://localhost:9200"),
+            elasticsearch_api_key=os.getenv("ELASTICSEARCH_API_KEY", ""),
             spicedb_endpoint=os.getenv("SPICEDB_ENDPOINT", "localhost:50051"),
             spicedb_token=os.getenv("SPICEDB_TOKEN", "devtoken"),
-            openai_api_key=os.getenv("OPENAI_API_KEY", ""),
+            mistral_api_key=os.getenv("MISTRAL_API_KEY", ""),
             max_retrieval_attempts=int(os.getenv("MAX_RETRIEVAL_ATTEMPTS", "1")),
             log_level=os.getenv("LOG_LEVEL", "INFO"),
         )

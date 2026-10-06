@@ -1,14 +1,14 @@
 [project]
-name = "agentic-rag-weaviate"
+name = "agentic-rag-elasticsearch"
 version = "0.1.0"
-description = "Agentic RAG with fine-grained authorization using Weaviate and SpiceDB"
+description = "Agentic RAG with fine-grained authorization using Elasticsearch and SpiceDB"
 requires-python = ">=3.10"
 dependencies = [
     "langchain>=0.1.0",
-    "langchain-openai>=0.1.0",
+    "langchain-mistralai>=0.2.0",
     "langgraph>=0.0.20",
     "langchain-spicedb>=0.1.0",
-    "weaviate-client>=4.4.0",
+    "elasticsearch>=8.0.0,<9.0.0",
     "authzed>=0.7.0",
     "python-dotenv>=1.0.0",
 ]
