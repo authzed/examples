@@ -21,17 +21,11 @@ The diagram below shows the end-to-end request flow: the application embeds the 
 
 ![Agentic RAG request flow: a user query is embedded with Mistral, searched against Elasticsearch, filtered through a SpiceDB permission check, and answered by the Mistral LLM before the response returns to the user](agentic-rag-flow.png)
 
-## Documentation Navigation
-
-- **[README.md](README.md)** (you are here) - Overview, quick start, core concepts
-- **[ARCHITECTURE.md](ARCHITECTURE.md)** - Deep dive into system design, security model, and trade-offs
-- **[data/PERMISSIONS.md](data/PERMISSIONS.md)** - Permission matrix and authorization patterns
-
 ## What You'll Learn
 
 This repo demonstrates:
 
-1. **Fine-grained authorization in RAG** - How to enforce document-level permissions with SpiceDB so users only see what they're allowed to see
+1. **Fine-grained authorization in Agentic RAG** - How to enforce document-level permissions with SpiceDB so users only see what they're allowed to see
 2. **Security architecture** - A deterministic authorization boundary that cannot be bypassed by the agent
 3. **Production features** - Structured logging, connection pooling, batch operations, error handling
 4. **Real-world complexity** - 50 documents, 4 permission patterns with hierarchies
@@ -76,8 +70,7 @@ Result:
 ✅ Authorized: 2 documents (eng-001, eng-002)
 ❌ Denied: 1 document (hr-001)
 
-Answer: "Based on the engineering documents, our system uses microservices
-architecture with event-driven patterns..."
+Answer: "Based on the engineering documents, our system uses microservices architecture with event-driven patterns..."
 ```
 
 ```bash
@@ -90,8 +83,7 @@ Result:
 ❌ Authorized: 0 documents
 ❌ Denied: 3 documents
 
-Answer: "I don't have access to the engineering documents needed to answer
-this question. This information is restricted to the engineering department."
+Answer: "I don't have access to the engineering documents needed to answer this question. This information is restricted to the engineering department."
 ```
 
 The agent transparently explains access limitations instead of failing silently.
@@ -131,36 +123,6 @@ python3 run_ui.py
 
 `run_ui.py` verifies Elasticsearch and SpiceDB connectivity, confirms the documents are loaded, starts the FastAPI server, and opens http://localhost:8000.
 
-### Try it out
-
-Choose **Bob** from **Sales** and run the query *"What are the company handbook guidelines?"*
-
-```
-📊 Retrieved: 5
-✅ Authorized: 3
-❌ Denied: 2
-```
-
-Now run the same query as **HR Manager**:
-
-```
-📊 Retrieved: 5
-✅ Authorized: 5
-❌ Denied: 0
-```
-
-Same query, same retrieved documents — SpiceDB decides what each user is allowed to see.
-
-### Manual start (optional)
-
-Prefer to start the server yourself (for example, with live reload during development)?
-
-```bash
-docker-compose up -d                                   # if not already running
-uvicorn api.main:app --reload --host 0.0.0.0 --port 8000
-open http://localhost:8000
-```
-
 ## How It Works
 
 ### 1. Authorization Model (SpiceDB)
@@ -192,9 +154,9 @@ definition document {
 
 ```mermaid
 flowchart TD
-    Q([User Query]) --> R[Retrieval Node<br/>Elasticsearch semantic search · mistral-embed]
-    R --> A[Authorization Node<br/>SpiceDB permission filter]
-    A --> G([Generation Node<br/>Answer from authorized context])
+    Q([User Query]) --> R[<b>Retrieval Node</b><br/>Elasticsearch semantic search · mistral-embed]
+    R --> A[<b>Authorization Node</b><br/>SpiceDB permission filter]
+    A --> G([<b>Generation Node</b><br/>Answer from authorized context])
     class A boundary
     classDef boundary fill:#fde68a,stroke:#b45309,stroke-width:2px,color:#1f2937;
 ```
@@ -207,14 +169,14 @@ When `max_attempts` is set above 1, a reasoning node activates if authorization 
 
 ```mermaid
 flowchart TD
-    Q([User Query]) --> R[Retrieval Node]
-    R --> A[Authorization Node<br/>deterministic · non-bypassable]
+    Q([User Query]) --> R[<b>Retrieval Node</b>]
+    R --> A[<b>Authorization Node</b><br/>deterministic · non-bypassable]
     A --> D{Some docs<br/>authorized?}
-    D -->|Yes| G([Generation Node])
-    D -->|No| RE[Reasoning Node<br/>LLM: retry with a different query, or give up?]
+    D -->|Yes| G([<b>Generation Node</b>])
+    D -->|No| RE[<b>Reasoning Node</b><br/>LLM: retry with a different query, or give up?]
     RE --> AL{Attempts<br/>left?}
     AL -->|Yes| R
-    AL -->|No| G2([Generation Node<br/>explains the denial])
+    AL -->|No| G2([<b>Generation Node</b><br/>explains the denial])
     class A boundary
     classDef boundary fill:#fde68a,stroke:#b45309,stroke-width:2px,color:#1f2937;
 ```
