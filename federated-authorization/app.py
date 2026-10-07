@@ -104,8 +104,7 @@ def make_spicedb_client(endpoint: str, token: str) -> Client:
         grpc.insecure_channel(endpoint), _BearerTokenInterceptor(token)
     )
     client = Client.__new__(Client)
-    for stub in Client.__bases__:
-        stub.__init__(client, channel)
+    client.init_stubs(channel)
     return client
 
 
@@ -457,7 +456,7 @@ def get_or_create_user(idp_type: str, idp_subject: str, email: str, display_name
 async def index(request: Request):
     user = current_user(request)
     if not user:
-        return templates.TemplateResponse("login.html", {"request": request})
+        return templates.TemplateResponse(request, "login.html")
 
     client = get_spicedb()
     doc_ids = lookup_viewable_documents(client, user["id"], request.session.get("zedtoken"))
@@ -471,8 +470,7 @@ async def index(request: Request):
         ).fetchall()
     db.close()
 
-    return templates.TemplateResponse("dashboard.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "dashboard.html", {
         "user": user,
         "documents": docs,
     })
@@ -492,8 +490,7 @@ async def keycloak_callback(request: Request):
     try:
         token = await oauth.keycloak.authorize_access_token(request)
     except Exception as e:
-        return templates.TemplateResponse("error.html", {
-            "request": request,
+        return templates.TemplateResponse(request, "error.html", {
             "error": f"Keycloak login failed: {e}",
         })
 
@@ -542,8 +539,7 @@ async def keycloak_callback(request: Request):
 @app.get("/auth/github/login")
 async def github_login(request: Request):
     if not GITHUB_CLIENT_ID:
-        return templates.TemplateResponse("error.html", {
-            "request": request,
+        return templates.TemplateResponse(request, "error.html", {
             "error": "GitHub OAuth is not configured. Set GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET in .env",
         })
     redirect_uri = f"{APP_BASE_URL}/auth/github/callback"
@@ -555,8 +551,7 @@ async def github_callback(request: Request):
     try:
         token = await oauth.github.authorize_access_token(request)
     except Exception as e:
-        return templates.TemplateResponse("error.html", {
-            "request": request,
+        return templates.TemplateResponse(request, "error.html", {
             "error": f"GitHub login failed: {e}",
         })
 
@@ -647,7 +642,7 @@ async def new_document_form(request: Request):
     user = current_user(request)
     if not user:
         return RedirectResponse("/", status_code=302)
-    return templates.TemplateResponse("document_new.html", {"request": request, "user": user})
+    return templates.TemplateResponse(request, "document_new.html", {"user": user})
 
 
 @app.post("/documents/new")
@@ -702,8 +697,7 @@ async def view_document(request: Request, doc_id: str):
         client, "document", doc_id, ["view", "edit", "share"], user["id"], zedtoken
     )
     if not perms["view"]:
-        return templates.TemplateResponse("error.html", {
-            "request": request,
+        return templates.TemplateResponse(request, "error.html", {
             "error": "Access denied. You do not have permission to view this document.",
             "user": user,
         }, status_code=403)
@@ -751,8 +745,7 @@ async def view_document(request: Request, doc_id: str):
         sharee_ids = {s["user_id"] for s in sharees}
         all_users = [r for r in rows if r["id"] not in sharee_ids]
 
-    return templates.TemplateResponse("document_view.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "document_view.html", {
         "user": user,
         "doc": doc,
         "content": content,
