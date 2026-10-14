@@ -42,13 +42,20 @@ def mistral_configured() -> bool:
 
 @pytest.fixture
 def require_services():
-    """Skip the calling test unless the requested live services are available."""
+    """Skip the calling test unless the requested live services are available.
+
+    Reachability is checked against the SAME endpoints the code connects to
+    (``config.elasticsearch_url`` / ``config.spicedb_endpoint``), so pointing
+    those env vars at a non-localhost host gates the tests correctly.
+    """
+    from agentic_rag.config import get_config
 
     def _require(*, elasticsearch: bool = False, spicedb: bool = False, mistral: bool = False):
-        if elasticsearch and not elasticsearch_reachable():
-            pytest.skip("Elasticsearch not reachable on localhost:9200")
-        if spicedb and not spicedb_reachable():
-            pytest.skip("SpiceDB not reachable on localhost:50051")
+        config = get_config()
+        if elasticsearch and not elasticsearch_reachable(config.elasticsearch_url):
+            pytest.skip(f"Elasticsearch not reachable at {config.elasticsearch_url}")
+        if spicedb and not spicedb_reachable(config.spicedb_endpoint):
+            pytest.skip(f"SpiceDB not reachable at {config.spicedb_endpoint}")
         if mistral and not mistral_configured():
             pytest.skip("MISTRAL_API_KEY not configured")
 

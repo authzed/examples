@@ -123,6 +123,14 @@ python3 run_ui.py
 
 `run_ui.py` verifies Elasticsearch and SpiceDB connectivity, confirms the documents are loaded, starts the FastAPI server, and opens http://localhost:8000.
 
+### Running the tests
+
+```bash
+pip install -e ".[dev]"
+pytest                 # unit tests — no services required
+pytest -m integration  # live tests against Elasticsearch + SpiceDB
+```
+
 ## How It Works
 
 ### 1. Authorization Model (SpiceDB)

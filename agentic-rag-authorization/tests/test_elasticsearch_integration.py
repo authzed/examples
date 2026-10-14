@@ -39,8 +39,13 @@ def test_retrieval_pulls_documents_from_elasticsearch(require_services):
 
     out = retrieval_node(state)
 
+    # retrieval_node swallows exceptions and returns []; surface any such error
+    # (bad embedding key, missing index, ...) instead of a vague count assertion.
+    last_message = out["messages"][-1].content if out["messages"] else ""
+    assert "failed" not in last_message.lower(), f"retrieval_node reported an error: {last_message}"
+
     docs = out["retrieved_documents"]
-    assert len(docs) > 0, "Expected Elasticsearch to return at least one document"
+    assert len(docs) > 0, "Elasticsearch returned no documents — run examples/setup_environment.py first"
     assert out["retrieval_attempt"] == 1
     for doc in docs:
         assert doc.metadata.get("doc_id")

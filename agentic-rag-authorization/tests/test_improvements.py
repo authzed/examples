@@ -1,5 +1,5 @@
 """Tests for production-hardening features: structured logging, connection
-pooling, input validation, error handling, and configuration.
+pooling, input validation, and configuration.
 
 (Moved from the repo-root ``test_improvements.py`` and converted from a
 print/``main()`` script into real pytest assertions.)
@@ -7,11 +7,8 @@ print/``main()`` script into real pytest assertions.)
 
 import json
 import logging
-from pathlib import Path
 
 import pytest
-
-REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_structured_logging_emits_json(capsys):
@@ -79,14 +76,9 @@ def test_input_validation():
     assert len(validate_query("x" * 2000)) == 1000
 
 
-def test_nodes_have_error_handling():
-    retrieval = (REPO_ROOT / "agentic_rag" / "nodes" / "retrieval_node.py").read_text()
-    assert "except Exception as e:" in retrieval
-    assert "logger.error" in retrieval
-
-    auth = (REPO_ROOT / "agentic_rag" / "nodes" / "authorization_node.py").read_text()
-    assert "logger.info" in auth
-    assert "SpiceDBAuthorizer" in auth
+# Node error-handling is covered behaviorally rather than by source-text grep:
+#   - retrieval  -> test_retrieval_node.py::test_retrieval_node_increments_attempt_on_failure
+#   - authorization -> test_authorization_node.py
 
 
 def test_config_has_log_level():

@@ -19,7 +19,7 @@ AUTHORIZED_TITLE = "Engineering Guide"
 DENIED_CONTENT = "CONFIDENTIAL_HR_SALARY_DATA_DENIED"
 
 
-def _state(authorized_documents, denied_count):
+def _state(authorized_documents, denied_count, retrieved_documents=None):
     return {
         "query": "What are our engineering best practices?",
         "subject_id": "alice",
@@ -27,7 +27,7 @@ def _state(authorized_documents, denied_count):
         "retrieval_attempt": 1,
         "messages": [],
         "reasoning": [],
-        "retrieved_documents": [],
+        "retrieved_documents": retrieved_documents or [],
         "authorized_documents": authorized_documents,
         "denied_count": denied_count,
         "authorization_passed": bool(authorized_documents),
@@ -51,16 +51,26 @@ def test_denied_document_content_never_reaches_prompt_or_answer():
         page_content=AUTHORIZED_CONTENT,
         metadata={"title": AUTHORIZED_TITLE, "doc_id": "engineering-guide-001"},
     )
+    # The denied document was retrieved but filtered out by authorization: it is
+    # present in retrieved_documents but NOT in authorized_documents. If generation
+    # ever read from retrieved_documents, this content would leak into the prompt.
+    denied = Document(
+        page_content=DENIED_CONTENT,
+        metadata={"title": "Confidential HR Salaries", "doc_id": "hr-policy-003"},
+    )
+    state = _state([authorized], denied_count=1, retrieved_documents=[authorized, denied])
+
     with patch(
         "agentic_rag.nodes.generation_node.get_llm",
         return_value=_capturing_llm(captured),
     ):
-        out = generation_node(_state([authorized], denied_count=1))
+        out = generation_node(state)
 
     # Authorized content IS present in the prompt...
     assert AUTHORIZED_CONTENT in captured["prompt"]
     assert AUTHORIZED_TITLE in captured["prompt"]
-    # ...and the denied document's content is absent from both prompt and answer.
+    # ...and the denied document's content — though present in retrieved_documents —
+    # is absent from both the prompt and the answer.
     assert DENIED_CONTENT not in captured["prompt"]
     assert DENIED_CONTENT not in out["answer"]
 
