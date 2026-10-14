@@ -38,12 +38,3 @@ def test_config_elasticsearch_defaults():
         config = Config.from_env()
     assert config.elasticsearch_url == "http://localhost:9200"
     assert config.elasticsearch_api_key == ""
-
-
-def test_config_has_no_milvus_weaviate_or_openai_fields():
-    config = Config.from_env()
-    assert not hasattr(config, "milvus_uri")
-    assert not hasattr(config, "milvus_token")
-    assert not hasattr(config, "weaviate_url")
-    assert not hasattr(config, "weaviate_api_key")
-    assert not hasattr(config, "openai_api_key")

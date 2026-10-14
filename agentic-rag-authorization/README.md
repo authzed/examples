@@ -106,10 +106,10 @@ cp .env.example .env
 # 2. Start Elasticsearch + SpiceDB
 docker-compose up -d
 
-# 3. Install dependencies (includes FastAPI + Uvicorn for the UI)
+# 3. Install dependencies (the [ui] extra adds FastAPI + Uvicorn for the web UI)
 python3 -m venv venv
 source venv/bin/activate
-pip install -r requirements.txt
+pip install -e ".[ui]"
 
 # 4. Initialize data — embed 50 documents into Elasticsearch
 #    and write the permission model to SpiceDB
