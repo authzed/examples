@@ -1,86 +1,75 @@
-"""Basic integration tests for agentic RAG."""
+"""End-to-end integration tests for the agentic RAG graph.
+
+These run the full graph against live Elasticsearch + SpiceDB + Mistral, so they
+are marked ``integration`` and skip automatically when those services are
+unavailable. Run with ``pytest -m integration`` after seeding the environment
+via ``examples/setup_environment.py``.
+"""
 
 import pytest
 from agentic_rag.graph import build_agentic_rag_graph
 
 
+def _initial_state(query, subject_id, max_attempts):
+    return {
+        "query": query,
+        "subject_id": subject_id,
+        "max_attempts": max_attempts,
+        "retrieval_attempt": 0,
+        "messages": [],
+        "reasoning": [],
+        "retrieved_documents": [],
+        "authorized_documents": [],
+        "denied_count": 0,
+        "authorization_passed": False,
+        "answer": "",
+    }
+
+
+@pytest.mark.integration
 @pytest.mark.asyncio
-async def test_authorized_access():
-    """Test that authorized user can access documents."""
+async def test_authorized_access(require_services):
+    """Authorized user (alice, engineering) can access engineering documents."""
+    require_services(elasticsearch=True, spicedb=True, mistral=True)
     graph = build_agentic_rag_graph()
 
     result = await graph.ainvoke(
-        {
-            "query": "What are our engineering best practices?",
-            "subject_id": "alice",
-            "max_attempts": 3,
-            "retrieval_attempt": 0,
-            "messages": [],
-            "reasoning": [],
-            "retrieved_documents": [],
-            "authorized_documents": [],
-            "denied_count": 0,
-            "authorization_passed": False,
-            "answer": "",
-        }
+        _initial_state("What are our engineering best practices?", "alice", 3)
     )
 
-    # Alice should have access to engineering documents
     assert len(result["authorized_documents"]) > 0
     assert result["authorization_passed"] is True
     assert result["answer"] != ""
 
 
+@pytest.mark.integration
 @pytest.mark.asyncio
-async def test_denied_access():
-    """Test that unauthorized user is denied access."""
+async def test_denied_access(require_services):
+    """Unauthorized user (bob, sales) is denied access to HR documents."""
+    require_services(elasticsearch=True, spicedb=True, mistral=True)
     graph = build_agentic_rag_graph()
 
     result = await graph.ainvoke(
-        {
-            "query": "What are the HR policies and employee guidelines?",
-            "subject_id": "bob",
-            "max_attempts": 3,
-            "retrieval_attempt": 0,
-            "messages": [],
-            "reasoning": [],
-            "retrieved_documents": [],
-            "authorized_documents": [],
-            "denied_count": 0,
-            "authorization_passed": False,
-            "answer": "",
-        }
+        _initial_state("What are the HR policies and employee guidelines?", "bob", 3)
     )
 
-    # Bob (sales) should not have access to HR documents
     assert len(result["authorized_documents"]) == 0
     assert result["denied_count"] > 0
     assert result["answer"] != ""
-    # Answer should explain the access denial
+    # Answer should explain the access denial.
     assert "access" in result["answer"].lower() or "permission" in result["answer"].lower()
 
 
+@pytest.mark.integration
 @pytest.mark.asyncio
-async def test_retrieval_attempts():
-    """Test that system respects max retrieval attempts."""
+async def test_retrieval_attempts(require_services):
+    """System respects max retrieval attempts when authorization keeps failing."""
+    require_services(elasticsearch=True, spicedb=True, mistral=True)
     graph = build_agentic_rag_graph()
 
     result = await graph.ainvoke(
-        {
-            "query": "Query that will fail authorization",
-            "subject_id": "unauthorized_user",
-            "max_attempts": 2,
-            "retrieval_attempt": 0,
-            "messages": [],
-            "reasoning": [],
-            "retrieved_documents": [],
-            "authorized_documents": [],
-            "denied_count": 0,
-            "authorization_passed": False,
-            "answer": "",
-        }
+        _initial_state("Query that will fail authorization", "unauthorized_user", 2)
     )
 
-    # Should not exceed max attempts
     assert result["retrieval_attempt"] <= 2
     assert result["answer"] != ""
