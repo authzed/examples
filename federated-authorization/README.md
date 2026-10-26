@@ -44,6 +44,8 @@ definition document {
 }
 ```
 
+**Why bind identities to a single `user`?** Every grant targets the internal `user`, so permissions survive swapping or adding IdPs, and each login is resolved to that user once. An alternative is to grant on a `user#identity` permission that unions every linked account. That lets you check directly with any IdP ID, but checks on the internal user ID then need an extra `self` relation, and creating or sharing documents still needs the internal user. The goal here is to consolidate on the internal ID, at which point the login lookup goes away.
+
 ### Persistence
 
 SpiceDB is backed by **PostgreSQL** (`--datastore-engine=postgres`), so every relationship — the IdP→user bindings *and* the document grants — survives a restart of the stack. A one-shot `datastore migrate head` service initializes the Postgres schema before SpiceDB starts serving.
