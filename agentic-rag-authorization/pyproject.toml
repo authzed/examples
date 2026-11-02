@@ -4,28 +4,38 @@ version = "0.1.0"
 description = "Agentic RAG with fine-grained authorization using Elasticsearch and SpiceDB"
 requires-python = ">=3.10"
 dependencies = [
-    "langchain>=0.1.0",
     "langchain-mistralai>=0.2.0",
     "langgraph>=0.0.20",
-    "langchain-spicedb>=0.1.0",
-    "elasticsearch>=8.0.0,<9.0.0",
+    "langchain-spicedb>=0.2.0",
+    "elasticsearch>=9.0.0,<10.0.0",
     "authzed>=0.7.0",
     "python-dotenv>=1.0.0",
 ]
 
 [project.optional-dependencies]
+ui = [
+    "fastapi>=0.109.0",
+    "uvicorn[standard]>=0.27.0",
+]
 dev = [
     "pytest>=7.0.0",
     "pytest-asyncio>=0.21.0",
     "ruff>=0.1.0",
 ]
 
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "strict"
+markers = [
+    "integration: tests requiring live Elasticsearch/SpiceDB/Mistral services (deselect with '-m \"not integration\"')",
+]
+
 [build-system]
 requires = ["setuptools>=61.0", "wheel"]
-build-backend = "setuptools.build_backend"
+build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
-packages = ["agentic_rag", "agentic_rag.nodes", "agentic_rag.tools"]
+packages = ["agentic_rag", "agentic_rag.nodes"]
 
 [tool.setuptools.package-data]
 agentic_rag = ["py.typed"]

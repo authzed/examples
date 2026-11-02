@@ -56,6 +56,23 @@ def test_retrieval_node_returns_documents(sample_state):
     assert doc.page_content == "Content"
     assert result["retrieval_attempt"] == 1
 
+    # Exactly one Elasticsearch query is performed...
+    mock_client.search.assert_called_once()
+    # ...and it is the expected kNN query over the embedded user query.
+    _, search_kwargs = mock_client.search.call_args
+    assert search_kwargs["index"] == "documents"
+    assert search_kwargs["knn"]["field"] == "embedding"
+    assert search_kwargs["knn"]["k"] == 5
+    assert search_kwargs["knn"]["num_candidates"] == 50
+    assert search_kwargs["knn"]["query_vector"] == [0.1] * 1024
+    assert search_kwargs["source"] == [
+        "doc_id",
+        "title",
+        "content",
+        "department",
+        "classification",
+    ]
+
 
 def test_retrieval_node_increments_attempt_on_failure(sample_state):
     from agentic_rag.nodes.retrieval_node import retrieval_node

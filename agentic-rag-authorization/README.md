@@ -1,6 +1,6 @@
 # Agentic RAG with Fine-Grained Authorization
 
-This repository demonstrates how to combine agentic behavior with deterministic fine-grained authorization using LangGraph, SpiceDB, [Elasticsearch](https://github.com/elastic/elasticsearch), and [Mistral](https://mistral.ai/). You'll learn to build RAG systems where a user can only see information from the documents they have access to.
+This repository demonstrates how to combine agentic behavior with deterministic fine-grained authorization using LangGraph, SpiceDB, [Elasticsearch](https://github.com/elastic/elasticsearch), and [Mistral](https://mistral.ai/). You'll learn to build an Agentic RAG system where a user can only see information from the documents they have access to.
 
 This project uses the [LangChain SpiceDB](https://pypi.org/project/langchain-spicedb/) library.
 
@@ -9,13 +9,13 @@ This project uses the [LangChain SpiceDB](https://pypi.org/project/langchain-spi
 
 ## TL;DR (human-written)
 
-RAG systems typically focus on the retrieval mechanisms, but don't have fine-grained access control to check if the information retrieved is accessible to the user asking the query. This demo shows the setup for a prod-like Agentic RAG. It has a corpus of 50 documents with complex sharing requirements that span individual, departments and exceptions. 
+RAG systems typically focus on the retrieval mechanisms, but don't have fine-grained access control to check if the information retrieved is accessible to the user asking the query. This demo shows the setup for a prod-like Agentic RAG system. It has a corpus of 50 documents with [complex sharing requirements](https://github.com/authzed/examples/blob/main/agentic-rag-authorization/data/PERMISSIONS.md) that span individual, departments and exceptions. 
 
 The two takeaways from this demo are:
 
-1. Using ReBAC makes it simple to model complex hierarchal permissions. The complexity increases in the context of RAG and AI Applications as there are 10x more principals, so traditional authorization methods such as RBAC fall flat.
+1. Using ReBAC makes it simple to model complex hierarchal permissions. The complexity increases in the context of RAG and AI Applications as there are 10x more principals, so traditional authorization methods such as RBAC, row-level security, or scoped tokens fall flat.
 
-2. Never ever let an AI Agent *decide* if it needs to check for authorization. Gen AI is inherently probabilistic so you have to ensure that permission checks are deterministic and cannot be skipped.
+2. Never ever let an AI Agent *decide* if it needs to check for authorization. Generative AI is inherently probabilistic so you have to ensure that permission checks are deterministic and cannot be skipped or else you might fall victim to prompt injection attacks.
 
 The diagram below shows the end-to-end request flow: the application embeds the query with Mistral, retrieves relevant context from Elasticsearch, checks permissions in SpiceDB, and only then passes the authorized context to the Mistral LLM to generate a response.
 
@@ -25,19 +25,20 @@ The diagram below shows the end-to-end request flow: the application embeds the 
 
 This repo demonstrates:
 
-1. **Fine-grained authorization in Agentic RAG** - How to enforce document-level permissions with SpiceDB so users only see what they're allowed to see
+1. **Fine-grained authorization in Agentic RAG** - How to enforce document-level permissions with SpiceDB so users get responses based only on what they're allowed to see
 2. **Security architecture** - A deterministic authorization boundary that cannot be bypassed by the agent
 3. **Production features** - Structured logging, connection pooling, batch operations, error handling
 4. **Real-world complexity** - 50 documents, 4 permission patterns with hierarchies
 
-Note: Despite the "agentic RAG" name, the default mode is intentionally simple and deterministic (3 nodes: retrieve → authorize → generate). This provides fast, predictable behavior suitable for most use cases. There is a `MAX_RETRIEVAL_ATTEMPTS` option where the AI Agent can reason if it has to retrieve more data.
+Note: Despite the "agentic RAG" name, the default mode is intentionally simple and deterministic (3 nodes: retrieve → authorize → generate). This provides fast, predictable behavior suitable for most use cases. There is a `MAX_RETRIEVAL_ATTEMPTS` option where the AI Agent can **reason** if it has to retrieve more data.
 
 ## The Problem This Solves
 
 Traditional RAG retrieves documents by semantic similarity without considering permissions. This creates two issues:
 
-1. **Security risk**: Users might see documents they shouldn't access
-2. **Poor UX**: Silent failures when documents are denied, with no explanation
+1. **Security risk**: Users might see documents they shouldn't access leading to data leakage. This can lead to reputation and customer damage if data is breached through injection attacks.
+2. **Audit and regulatory concerns** - Building enterprise-ready AI requires audit logs especially in compliance-regulated industries. 
+3. **Poor UX**: Silent failures when documents are denied, with no explanation
 
 Read the [OWASP Top 10 for LLM](https://owasp.org/www-project-top-10-for-large-language-model-applications/) and [OWASP Top 10 Risks to Web Apps](https://owasp.org/Top10/2025/A01_2025-Broken_Access_Control/) for more on why access control matters.
 
@@ -93,9 +94,9 @@ The agent transparently explains access limitations instead of failing silently.
 The demo runs entirely through the web UI, which lets you switch users and watch the authorization boundary filter results in real time.
 
 ### Prerequisites
-- Docker & Docker Compose
+- Docker (runs SpiceDB and Elasticsearch containers)
 - Python 3.11+
-- Mistral API key
+- Mistral (or any other LLM) API key
 
 ### Steps
 
@@ -106,10 +107,10 @@ cp .env.example .env
 # 2. Start Elasticsearch + SpiceDB
 docker-compose up -d
 
-# 3. Install dependencies (includes FastAPI + Uvicorn for the UI)
+# 3. Install dependencies (the [ui] extra adds FastAPI + Uvicorn for the web UI)
 python3 -m venv venv
 source venv/bin/activate
-pip install -r requirements.txt
+pip install -e ".[ui]"
 
 # 4. Initialize data — embed 50 documents into Elasticsearch
 #    and write the permission model to SpiceDB
@@ -123,9 +124,19 @@ python3 run_ui.py
 
 `run_ui.py` verifies Elasticsearch and SpiceDB connectivity, confirms the documents are loaded, starts the FastAPI server, and opens http://localhost:8000.
 
+### Running the tests
+
+```bash
+pip install -e ".[dev]"
+pytest                 # unit tests — no services required
+pytest -m integration  # live tests against Elasticsearch + SpiceDB
+```
+
 ## How It Works
 
-### 1. Authorization Model (SpiceDB)
+### 1. Authorization Model 
+
+#### Here's the SpiceDB Schema:
 
 ```zed
 definition user {}
@@ -195,35 +206,6 @@ MAX_RETRIEVAL_ATTEMPTS=3  # default is 1
 - **Deterministic checks**: SpiceDB enforces permissions (no LLM involved in the decision)
 - **Fail closed**: Access denied unless explicitly granted
 - **Observable**: Full audit trail in state
-
-## Configuration
-
-Environment variables (`.env`):
-
-```bash
-# Required
-MISTRAL_API_KEY=...
-
-# Optional (defaults shown)
-ELASTICSEARCH_URL=http://localhost:9200
-ELASTICSEARCH_API_KEY=
-SPICEDB_ENDPOINT=localhost:50051
-SPICEDB_TOKEN=devtoken
-MAX_RETRIEVAL_ATTEMPTS=1
-LOG_LEVEL=INFO
-```
-
-## Dataset Overview
-
-The repository includes a realistic 50-document dataset across 5 departments.
-
-**Authorization Patterns:**
-1. Department-based access (primary pattern)
-2. Cross-department collaboration (3 shared documents)
-3. Individual user exceptions (3 special grants)
-4. Public documents (accessible to all users)
-
-See [data/PERMISSIONS.md](data/PERMISSIONS.md) for the complete permission matrix.
 
 ## Learn More
 

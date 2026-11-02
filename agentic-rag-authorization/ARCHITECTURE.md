@@ -1258,7 +1258,7 @@ agentic-rag-elasticsearch/
 │
 ├── run_ui.py                  # Web UI launcher with pre-flight checks
 ├── docker-compose.yml         # Elasticsearch + SpiceDB services
-├── requirements.txt           # Python dependencies (includes fastapi, uvicorn)
+├── pyproject.toml             # Project metadata + dependencies ([ui] extra adds fastapi, uvicorn)
 ├── .env.example               # Environment variable template
 ├── README.md                  # Overview, quick start, usage guide
 └── ARCHITECTURE.md            # This file: deep technical dive
