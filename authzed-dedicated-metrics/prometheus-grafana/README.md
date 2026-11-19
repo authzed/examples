@@ -12,12 +12,13 @@ To enable Prometheus to scrape metrics from your permission system, configure th
     scrape_configs:
       - job_name: "exported-metrics-from-[permission-system]"
         metrics_path: /api/v1alpha/metrics
+        scheme: https
         basic_auth:
           username: "[permission-system]"
           password: "[token]"
         static_configs:
           - targets:
-              - "[authzed-dashboard-url]"
+              - "[authzed-dashboard-host]"
     ```
 
 ### Required Values
@@ -27,6 +28,8 @@ To enable Prometheus to scrape metrics from your permission system, configure th
 
 - **metrics_path**: Set to `/api/v1alpha/metrics`.
 
+- **scheme**: Set to `https`.
+
 - **basic_auth**:
   - **username**: Replace `[permission-system]` with the permission system name used for basic authentication.
     - Example: `username: "my-permission-system"`
@@ -34,9 +37,9 @@ To enable Prometheus to scrape metrics from your permission system, configure th
     - Example: `password: "doGXlyJdtjZHOdCw486t"`
 
 - **static_configs**:
-  - **targets**: Replace `[authzed-dashboard-url]` with the URL of your Authzed dashboard.
+  - **targets**: Replace `[authzed-dashboard-host]` with the hostname of your AuthZed dashboard, without `https://`.
 
-    - Example: `targets: ["https://app.demo.aws.authzed.net"]`
+    - Example: `targets: ["app.demo.aws.authzed.net"]`
 
 ### Example Configuration
 
@@ -46,12 +49,13 @@ Here's an example of a filled-out configuration:
     scrape_configs:
       - job_name: "exported-metrics-from-my-permission-system"
         metrics_path: /api/v1alpha/metrics
+        scheme: https
         basic_auth:
           username: "my-permission-system"
           password: "my-secret-token"
         static_configs:
           - targets:
-              - "https://app.demo.aws.authzed.net"
+              - "app.demo.aws.authzed.net"
     ```
 
 3. Save prometheus.yml 
