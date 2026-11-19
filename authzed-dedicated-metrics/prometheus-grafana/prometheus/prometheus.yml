@@ -19,9 +19,10 @@ scrape_configs:
           - "localhost:9090"
   - job_name: "exported-metrics-from-[permission-system]"
     metrics_path: "/api/v1alpha/metrics"
+    scheme: "https"
     basic_auth:
       username: "[permission-system]"
       password: "[token]"
     static_configs:
       - targets:
-          - "[authzed-dashboard-url]"
+          - "[authzed-dashboard-host]"
